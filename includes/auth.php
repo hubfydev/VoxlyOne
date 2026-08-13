@@ -1,0 +1,81 @@
+<?php
+declare(strict_types=1);
+
+/** Usuário logado, ou null. Faz uma única consulta por request. */
+function current_user(): ?array
+{
+    static $user = null;
+    static $loaded = false;
+
+    if ($loaded) {
+        return $user;
+    }
+    $loaded = true;
+
+    $id = $_SESSION['user_id'] ?? null;
+    if (!is_int($id)) {
+        return null;
+    }
+
+    $stmt = db()->prepare(
+        'SELECT id, google_id, email, name, avatar_url, consented_at, created_at
+           FROM users WHERE id = ?'
+    );
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+
+    // Sessão apontando para usuário que não existe mais (conta excluída)
+    if ($row === false) {
+        session_destroy();
+        return null;
+    }
+
+    $user = $row;
+    return $user;
+}
+
+/** Topo de toda PÁGINA protegida: sem sessão, volta para a landing. */
+function require_auth(): array
+{
+    $user = current_user();
+    if ($user === null) {
+        redirect('/index.php');
+    }
+    return $user;
+}
+
+/** Topo de todo ENDPOINT /api protegido: sem sessão, 401 JSON — nunca redirect. */
+function require_auth_api(): array
+{
+    $user = current_user();
+    if ($user === null) {
+        json_error('unauthorized', 'Faça login para continuar.', 401);
+    }
+    return $user;
+}
+
+/**
+ * Cria ou atualiza o usuário vindo do Google.
+ * Upsert obrigatório: email e google_id são ambos UNIQUE, e um INSERT simples
+ * daria erro 500 se o mesmo e-mail voltasse associado a outro google_id.
+ */
+function upsert_google_user(string $googleId, string $email, string $name, ?string $avatarUrl): int
+{
+    $stmt = db()->prepare(
+        'INSERT INTO users (google_id, email, name, avatar_url)
+              VALUES (:gid, :email, :name, :avatar)
+         ON DUPLICATE KEY UPDATE
+              name       = VALUES(name),
+              avatar_url = VALUES(avatar_url),
+              id         = LAST_INSERT_ID(id)'
+    );
+    $stmt->execute([
+        ':gid'    => $googleId,
+        ':email'  => $email,
+        ':name'   => mb_substr($name, 0, 120),
+        ':avatar' => $avatarUrl !== null ? mb_substr($avatarUrl, 0, 500) : null,
+    ]);
+
+    // LAST_INSERT_ID(id) no UPDATE faz o lastInsertId() devolver o id existente
+    return (int)db()->lastInsertId();
+}

@@ -1,0 +1,158 @@
+# VoxlyOne — Instruções do Projeto
+
+App web de treino de pronúncia em inglês para brasileiros. O usuário cadastra frases
+(PT/EN), ouve a pronúncia correta em três velocidades, grava a própria voz, recebe
+análise de IA com nota de 0 a 10, avança com **≥ 8.0** e ganha o selo "Dominada" com **10**.
+
+Documento completo: [docs/VoxlyOne_Arquitetura_Tecnica_v2.6.md](docs/VoxlyOne_Arquitetura_Tecnica_v2.6.md)
+
+## Stack
+
+PHP 8.2+ puro (sem framework) · MySQL via PDO · JS Vanilla sem build · HTML/CSS mobile-first
+Hostinger hospedagem compartilhada (LiteSpeed) · Domínio: voxly.hubfy.app
+IA: OpenAI `gpt-audio-1.5` via cURL · Auth: Google OAuth 2.0 manual + sessões PHP
+
+## Fatos medidos (spike do Dia 1, 11/08/2026) — não re-derivar
+
+- **Wall-clock do LiteSpeed não é limitante**: conexão ociosa sobreviveu a 35s.
+  Streaming e VPS são desnecessários.
+- **Modelo correto: `gpt-audio-1.5`**. Os nomes `gpt-4o-audio-preview` e
+  `gpt-4o-mini-audio-preview` foram aposentados e retornam 404.
+- **Latência real ~2,3s** por análise (não 8–15s).
+- **Custo real ~US$ 0,004** por análise (não US$ 0,03). O grosso é o texto do
+  prompt, não o áudio — encurtar prompt economiza mais que encurtar áudio.
+- **Ambiente do plano**: upload_max_filesize e post_max_size 256M, memory_limit 512M,
+  max_execution_time 120, cURL e pdo_mysql presentes. Nada a ajustar no php.ini.
+- `gpt-audio-mini` é ~igual em nota mas menos coerente no campo `heard`. Ficamos no
+  modelo grande; só reavaliar com mais amostras.
+
+## Regras obrigatórias
+
+- `declare(strict_types=1)` no topo de todo arquivo PHP
+- TODA query via PDO prepared statements — proibido concatenar input em SQL
+- TODA saída de dado de usuário via `htmlspecialchars($x, ENT_QUOTES, 'UTF-8')`
+- TODO endpoint POST valida token CSRF server-side (inclusive os de `/api`)
+- Secrets APENAS em `config.php` fora do `public_html` — nunca hardcoded
+- Endpoints `/api` sempre retornam JSON `{ success, data|error }` com
+  `http_response_code` correto; 401 JSON se sem sessão, nunca redirect
+- Toda página protegida começa com `require_auth()`; toda query filtra por
+  `user_id` da sessão
+- Nunca salvar o áudio em disco — processar em memória e descartar
+- Mensagens de erro ao usuário: genéricas e em PT-BR; detalhes técnicos só no log
+- JS sem frameworks e sem build: estáticos em `assets/js`, ES6+, sem CDN.
+  O confetti é ~20 linhas de canvas próprio.
+- CSS mobile-first com variáveis CSS; breakpoints `min-width`
+- Funções e variáveis em inglês; comentários em português
+
+## Regras de domínio que quebram o app se ignoradas
+
+**Progressão** — avançar ≠ dominar: avança com `score >= 8.0`, "Dominada" só com `10`.
+Um gate exato em 10 trava o produto (o modelo raramente dá 10 a não-nativos e a nota
+oscila ~1 ponto).
+
+**`best_score` nunca regride**, em nenhum status:
+`best_score = GREATEST(COALESCE(best_score,0), :score)`. Sem isso, tirar 6.0 ao
+"Tentar o 10" desfaz uma aprovação de 8.5.
+
+**`last_attempt_at = NOW()` em TODA tentativa**, não só no skip — é o critério de
+ordenação da fila.
+
+**Fila da próxima frase** (sem filtro por `best_score`, que esvaziaria a fila):
+```sql
+WHERE user_id = ? AND status <> 'mastered'
+ORDER BY (COALESCE(best_score,0) >= 8) ASC,
+         last_attempt_at IS NULL DESC, last_attempt_at ASC, created_at ASC
+LIMIT 1
+```
+
+**Transições de status** (completas, não existem outras): `not_started` até a primeira
+tentativa → `in_progress` na primeira tentativa registrada → `mastered` com score 10.
+`mastered` nunca regride.
+
+**Rate limit**: incremento ATÔMICO (`INSERT ... ON DUPLICATE KEY UPDATE`) **antes** da
+chamada à OpenAI. Devolver a cota (`count - 1`) em QUALQUER caminho que não grave um
+attempt. Única exceção: erro de validação do usuário, que aborta antes do incremento.
+
+⚠️ **`exit` não executa `finally` em PHP.** Como `json_ok()`/`json_error()` terminam
+com `exit`, chamá-las dentro do `try` pula o refund silenciosamente. Padrão correto:
+o `try` só computa e guarda o resultado numa variável; a resposta HTTP vem **depois**
+do `finally`. Ver [api/translate.php](public_html/api/translate.php).
+
+**Sanitização da resposta da IA**: `mb_substr($heard, 0, 500)` e clamp do score em
+0–10 com cast float, ANTES do INSERT. O modelo pode devolver `11`, `"9.5"` ou um
+`heard` de 600 chars — e o INSERT estouraria depois de já ter pago a chamada.
+
+**Transação**: `INSERT attempt` + `UPDATE phrase` no mesmo `beginTransaction()`.
+Sem isso, uma falha entre os dois deixa `attempts_count` divergente para sempre.
+
+**Consentimento**: `analyze.php` retorna 403 se `consented_at` for NULL. O modal é
+client-side; quem grava é `api/consent.php`.
+
+**Nunca usar Whisper nem qualquer modelo `*-transcribe`** para transcrever antes de
+avaliar — eles corrigem o sotaque e apagam exatamente o erro que queremos medir.
+
+**`phonetic_guide` é funcionalidade de primeira classe**, não acessório: pronúncia
+aproximada em sons do português, sem IPA. Pré-preenchida pela IA, editável, e exibida
+na tela de prática junto com a frase.
+
+## Estrutura
+
+**No servidor** — `voxly.hubfy.app` é subdomínio com document root em
+`public_html/voxly/`. A parte privada NÃO pode ficar em `public_html/`, que é o
+document root do `hubfy.app` e serviria o código na web. Ela mora em `voxly-app/`,
+irmã de `public_html`:
+
+```
+/home/USUARIO/
+├── voxly-app/                 # privado — nenhum document root aponta para cá
+│   ├── config/config.php      # secrets
+│   ├── logs/app.log
+│   └── includes/
+│       ├── bootstrap.php  auth.php  db.php  csrf.php
+│       └── rate_limit.php  openai.php  header.php  footer.php
+└── public_html/               # ← document root do hubfy.app
+    └── voxly/                 # ← document root do voxly.hubfy.app
+        ├── index.php  dashboard.php  phrase_form.php  practice.php
+        ├── mastered.php  profile.php  privacy.php  terms.php
+        ├── auth/{login,callback,logout}.php
+        ├── api/{analyze,translate,phrases,consent,delete_account,health}.php
+        ├── assets/css/app.css  assets/js/{recorder,player,practice}.js
+        └── .htaccess
+```
+
+**No repositório**, `public_html/` corresponde a `public_html/voxly/` no servidor e
+`includes/` + `config.example.php` correspondem a `voxly-app/`.
+
+Todo arquivo público carrega **apenas** `boot.php`, nunca o bootstrap direto:
+
+```php
+require_once __DIR__ . '/boot.php';      // arquivos na raiz do site
+require_once __DIR__ . '/../boot.php';   // arquivos em auth/ e api/
+```
+
+`public_html/boot.php` é o único que sabe localizar a pasta privada: sobe diretório
+por diretório procurando `voxly-app/includes/bootstrap.php`. Isso faz o app funcionar
+com a `voxly-app` na home (preferido) ou dentro do `public_html` (fallback, quando o
+gerenciador de arquivos não dá acesso à home), sem editar arquivo nenhum.
+
+Depois do bootstrap carregado, use a constante `APP_INCLUDES` para incluir
+`header.php` e `footer.php`.
+
+Endpoints `/api` são todos POST (exceto `health.php`, GET público).
+Nada de PUT/DELETE: em hospedagem compartilhada o corpo não chega em `$_POST` e
+WAFs bloqueiam. CRUD via `action=create|update|delete`.
+
+## Checklist antes de cada commit
+
+- Nenhum secret no código; prepared statements em tudo; XSS escapado
+- `php -l` sem erros em todos os arquivos alterados
+- Testado no celular (Chrome Android + Safari iOS) além do desktop
+- Erros tratados com mensagem ao usuário + log no servidor
+
+## Estado atual
+
+Dia 1 concluído — arquitetura validada, `_spike.php` deletado, chave do spike revogada.
+Próximo: passo 2 do cronograma (Google Cloud Console → OAuth Client ID).
+
+Pendência de ambiente: o servidor estava em PHP 8.1.34; trocar para 8.2+ no hPanel
+(Avançado → Configuração PHP) antes de escrever código.

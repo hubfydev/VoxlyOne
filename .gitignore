@@ -1,0 +1,29 @@
+# Secrets — o config.php real mora fora do repositório, no servidor.
+# Só o config.example.php é versionado.
+config.php
+.env
+
+# Logs da aplicação
+*.log
+logs/
+
+# Spike do Dia 1: arquivo temporário que carregou a chave da OpenAI em texto.
+# Já cumpriu o papel (validou a arquitetura e virou base do recorder.js).
+public_html/api/_spike.php
+
+# Preferências locais do Claude Code
+.claude/settings.local.json
+
+# Lixo de sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*~
+
+# Arquivos temporários do Claude Code
+.claude/*.tmp.*

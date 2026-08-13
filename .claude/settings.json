@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(openssl rand *)",
+      "Bash(php -l public_html/api/_spike.php)",
+      "Bash([ -f \"$M\" ])",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git add *)",
+      "Bash(xargs -I{} echo \"Arquivos a versionar: {}\")",
+      "Bash(grep -nE 'sk-[A-Za-z0-9_-]{20,}|GOCSPX-|apps\\\\.googleusercontent\\\\.com' docs/VoxlyOne_Arquitetura_Tecnica_v2.6.md)"
+    ]
+  }
+}

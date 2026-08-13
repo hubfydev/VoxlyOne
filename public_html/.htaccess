@@ -1,0 +1,24 @@
+# VoxlyOne — .htaccess (seção 8.3 do documento de arquitetura)
+
+# Forçar HTTPS — getUserMedia não funciona sem ele
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+# Headers de segurança
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "DENY"
+Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+# Bloquear utilitários prefixados com _ (ex: o _spike.php do Dia 1)
+<FilesMatch "^_">
+  Require all denied
+</FilesMatch>
+
+# Nunca servir arquivos sensíveis, caso algum dia caiam aqui por engano
+<FilesMatch "\.(sql|log|md|example\.php)$">
+  Require all denied
+</FilesMatch>
+
+# Sem listagem de diretório
+Options -Indexes

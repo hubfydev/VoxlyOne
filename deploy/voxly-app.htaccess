@@ -1,0 +1,8 @@
+# Renomeie este arquivo para .htaccess e coloque na RAIZ da pasta voxly-app/
+#
+# Rede de segurança: se algum dia a voxly-app acabar dentro de um document root
+# (ex.: dentro de public_html), isto impede que config.php, logs e includes
+# sejam servidos na web. Se ela estiver fora de todo document root — o correto —
+# este arquivo simplesmente nunca é lido, e não atrapalha.
+
+Require all denied
