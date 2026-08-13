@@ -149,10 +149,20 @@ WAFs bloqueiam. CRUD via `action=create|update|delete`.
 - Testado no celular (Chrome Android + Safari iOS) além do desktop
 - Erros tratados com mensagem ao usuário + log no servidor
 
-## Estado atual
+## Estado atual (11/08/2026)
 
-Dia 1 concluído — arquitetura validada, `_spike.php` deletado, chave do spike revogada.
-Próximo: passo 2 do cronograma (Google Cloud Console → OAuth Client ID).
+**MVP funcional no ar em voxly.hubfy.app.** Fases 1 a 7 do cronograma concluídas e
+testadas no servidor: OAuth Google, CRUD de frases e categorias, tradução + fonética,
+tela de prática completa (TTS, gravação, análise, feedback, confetti), conquistas,
+perfil com exclusão de conta, páginas legais e consentimento.
 
-Pendência de ambiente: o servidor estava em PHP 8.1.34; trocar para 8.2+ no hPanel
-(Avançado → Configuração PHP) antes de escrever código.
+Git em `https://github.com/hubfydev/VoxlyOne` — commit `v1.0 - Versao beta`.
+O `_spike.php` foi deletado e a chave usada nele, revogada.
+
+**Pendências:**
+- Servidor em **PHP 8.1.34**; o projeto exige 8.2+. Trocar no hPanel
+  (Avançado → Configuração PHP)
+- `privacy.php` e `terms.php` têm marcadores `[RAZÃO SOCIAL OU NOME COMPLETO]` e
+  `[SEU E-MAIL DE CONTATO]` por preencher
+- Fase 8 (polimento) não iniciada: animações, toasts, revisão em telas pequenas
+- Ainda não testado o ciclo completo até a nota 10 (confetti + entrada em Conquistas)
