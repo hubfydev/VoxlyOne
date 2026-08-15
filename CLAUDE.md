@@ -159,10 +159,16 @@ perfil com exclusão de conta, páginas legais e consentimento.
 Git em `https://github.com/hubfydev/VoxlyOne` — commit `v1.0 - Versao beta`.
 O `_spike.php` foi deletado e a chave usada nele, revogada.
 
+**Produto americano.** Operado pela **Hubfy LLC** (Flórida, EUA), contato
+`us@hubfy.us`, lei aplicável da Flórida. A interface é em português porque o
+público-alvo fala português — nos EUA ou no Brasil. Fuso de referência:
+`America/New_York` (constante `APP_TIMEZONE`), alinhado também na sessão do MySQL
+para que `CURDATE()` do rate limit zere no horário certo. Datas exibidas via
+`format_date()`, no formato "12 ago 2026" — o numérico seria ambíguo entre os
+dois públicos.
+
 **Pendências:**
-- Servidor em **PHP 8.1.34**; o projeto exige 8.2+. Trocar no hPanel
-  (Avançado → Configuração PHP)
-- `privacy.php` e `terms.php` têm marcadores `[RAZÃO SOCIAL OU NOME COMPLETO]` e
-  `[SEU E-MAIL DE CONTATO]` por preencher
 - Fase 8 (polimento) não iniciada: animações, toasts, revisão em telas pequenas
 - Ainda não testado o ciclo completo até a nota 10 (confetti + entrada em Conquistas)
+- Resolvido: PHP 8.3 no servidor; dados legais preenchidos; bug do modal de
+  consentimento (`[hidden]` sobrescrito por `display:flex`) corrigido

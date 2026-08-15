@@ -17,7 +17,8 @@ ini_set('log_errors', '1');
 ini_set('error_log', LOG_FILE);
 error_reporting(E_ALL);
 
-date_default_timezone_set('America/Sao_Paulo');
+// Produto sediado nos EUA: o fuso vem do config e vale para o PHP e para o MySQL
+date_default_timezone_set(defined('APP_TIMEZONE') ? APP_TIMEZONE : 'America/New_York');
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/csrf.php';
@@ -44,6 +45,32 @@ function start_app_session(): void
     ]);
     session_name('voxlyone');
     session_start();
+}
+
+/**
+ * Data legível e sem ambiguidade: "12 ago 2026".
+ *
+ * Evita de propósito o formato numérico: 12/08 é 12 de agosto para um leitor
+ * brasileiro e 8 de dezembro para um americano. Como o produto é dos EUA mas a
+ * interface é em português, o mês escrito remove a dúvida para os dois públicos.
+ */
+function format_date(?string $datetime): string
+{
+    if ($datetime === null || $datetime === '') {
+        return '—';
+    }
+
+    static $months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun',
+                      'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+    $timestamp = strtotime($datetime);
+    if ($timestamp === false) {
+        return '—';
+    }
+
+    return date('j', $timestamp) . ' '
+         . $months[(int)date('n', $timestamp) - 1] . ' '
+         . date('Y', $timestamp);
 }
 
 /** Escapa saída para HTML. Usar em TODO dado que veio do usuário. */

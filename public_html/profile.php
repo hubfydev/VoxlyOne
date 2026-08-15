@@ -65,14 +65,14 @@ require APP_INCLUDES . '/header.php';
 
   <p class="profile__quota">
     Análises hoje: <strong><?= $usedToday ?> de <?= LIMIT_ANALYZE_PER_DAY ?></strong>.
-    O limite volta ao zero à meia-noite.
+    O limite zera à meia-noite no horário do Leste dos EUA.
   </p>
 
   <p class="profile__since">
-    Conta criada em <?= e(date('d/m/Y', strtotime((string)$user['created_at']))) ?>.
+    Conta criada em <?= e(format_date($user['created_at'])) ?>.
     <?php if ($user['consented_at'] !== null): ?>
       Consentimento de gravação aceito em
-      <?= e(date('d/m/Y', strtotime((string)$user['consented_at']))) ?>.
+      <?= e(format_date($user['consented_at'])) ?>.
     <?php endif; ?>
   </p>
 

@@ -9,7 +9,16 @@
       "Bash(git add *)",
       "Bash(xargs -I{} echo \"Arquivos a versionar: {}\")",
       "Bash(grep -nE 'sk-[A-Za-z0-9_-]{20,}|GOCSPX-|apps\\\\.googleusercontent\\\\.com' docs/VoxlyOne_Arquitetura_Tecnica_v2.6.md)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(echo \"=== ~/.claude/CLAUDE.md existe ===\")",
+      "Bash(cat /home/hubfy/.claude/CLAUDE.md)",
+      "Bash(echo \"\\(não existe ainda\\)\")",
+      "Bash(sed -i 's|\\\\[RAZÃO SOCIAL / NOME COMPLETO\\\\]|Hubfy LLC|g' public_html/privacy.php public_html/terms.php)",
+      "Bash(sed -i 's|<strong>\\\\[SEU E-MAIL DE CONTATO\\\\]</strong>|<a href=\"mailto:us@hubfy.us\">us@hubfy.us</a>|g' public_html/privacy.php public_html/terms.php)",
+      "Bash(sed -i 's|<strong>\\\\[SEU ESTADO\\\\]</strong>|<strong>Flórida</strong>|' public_html/terms.php)"
+    ],
+    "additionalDirectories": [
+      "/home/hubfy/.claude"
     ]
   }
 }

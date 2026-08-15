@@ -135,23 +135,30 @@ els.again.addEventListener('click', () => {
 
 // --- consentimento ----------------------------------------------------------
 
-els.consentAccept.addEventListener('click', async () => {
+els.consentAccept.addEventListener('click', () => {
+  els.consent.hidden = true;
+  consented = true;
+
+  // getUserMedia precisa ser chamado AINDA dentro do gesto do usuário: no
+  // Safari iOS, um await antes dele faz o browser recusar o microfone.
+  // Por isso a gravação começa já e o aceite é registrado em paralelo.
+  beginRecording();
+
   const body = new FormData();
   body.append('csrf_token', data.csrf);
 
-  try {
-    const res = await fetch('/api/consent.php', { method: 'POST', body });
-    const json = await res.json();
-    if (!json.success) {
-      showError(json.error?.message || 'Não foi possível registrar o aceite.');
-      return;
-    }
-    consented = true;
-    els.consent.hidden = true;
-    await beginRecording();
-  } catch {
-    showError('Sem conexão. Verifique sua internet e tente novamente.');
-  }
+  fetch('/api/consent.php', { method: 'POST', body })
+    .then((res) => res.json())
+    .then((json) => {
+      if (!json.success) {
+        consented = false;
+        showError('Não foi possível registrar seu aceite. Tente gravar novamente.');
+      }
+    })
+    .catch(() => {
+      consented = false;
+      showError('Sem conexão — seu aceite não foi registrado.');
+    });
 });
 
 els.consentCancel.addEventListener('click', () => {

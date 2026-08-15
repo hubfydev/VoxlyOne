@@ -18,6 +18,11 @@
 
 * { box-sizing: border-box; }
 
+/* O atributo hidden precisa vencer qualquer display de autor.
+   Sem isto, regras como `.modal { display: flex }` mantêm o elemento na tela
+   mesmo com hidden=true — foi o que prendia o modal de consentimento. */
+[hidden] { display: none !important; }
+
 html { -webkit-text-size-adjust: 100%; }
 
 body {

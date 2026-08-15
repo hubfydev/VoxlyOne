@@ -36,5 +36,12 @@ define('GLOBAL_DAILY_ANALYSES', 300);
 // Nota mínima para avançar para a próxima frase; 10 é o selo 'Dominada'
 define('SCORE_TO_ADVANCE', 8.0);
 
+/**
+ * Fuso horário de referência do produto (sediado nos EUA).
+ * Define quando o limite diário de análises zera e como as datas são exibidas.
+ * O PHP e a sessão do MySQL são alinhados a ele — ver includes/db.php.
+ */
+define('APP_TIMEZONE', 'America/New_York');
+
 define('APP_URL',  'https://voxly.hubfy.app');
 define('LOG_FILE', __DIR__ . '/../logs/app.log');

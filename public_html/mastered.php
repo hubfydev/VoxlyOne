@@ -49,7 +49,7 @@ require APP_INCLUDES . '/header.php';
         <div class="card__head">
           <span class="badge badge--mastered">Dominada</span>
           <span class="card__score">
-            <?= e(date('d/m/Y', strtotime((string)$phrase['mastered_at']))) ?>
+            <?= e(format_date($phrase['mastered_at'])) ?>
           </span>
         </div>
 
