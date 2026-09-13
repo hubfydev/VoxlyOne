@@ -1,4 +1,6 @@
-/* Formulário de frase: geração de tradução + fonética, e envio via fetch. */
+/* Formulário de frase: geração de tradução + fonética, envio via fetch e playlists. */
+
+import { openPlaylistPicker } from './playlist_picker.js';
 
 const form = document.getElementById('phrase-form');
 const errorBox = document.getElementById('form-error');
@@ -92,4 +94,14 @@ form.addEventListener('submit', async (event) => {
     showError('Sem conexão. Verifique sua internet e tente novamente.');
     btnSave.disabled = false;
   }
+});
+
+// Gravação aprovada da frase: o botão só existe quando há uma (nota > 8)
+const btnPlaylist = document.getElementById('btn-playlist');
+btnPlaylist?.addEventListener('click', () => {
+  openPlaylistPicker({
+    recordingId: btnPlaylist.dataset.recording,
+    csrf: form.csrf_token.value,
+    phraseText: btnPlaylist.dataset.label,
+  });
 });

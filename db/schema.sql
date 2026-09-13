@@ -10,7 +10,8 @@ CREATE TABLE users (
   avatar_url   VARCHAR(500),
   -- plan (free/premium): adicionar na Fase 2, quando premium existir
   consented_at DATETIME NULL,          -- consentimento de gravação (RF-12)
-  created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  consent_version TINYINT UNSIGNED NOT NULL DEFAULT 0, -- texto aceito; ver CONSENT_VERSION
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE categories (
@@ -53,7 +54,7 @@ CREATE TABLE attempts (
   feedback_json JSON NOT NULL,
   audio_seconds TINYINT UNSIGNED NULL, -- derivado: (bytes - 44) / 32000
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  -- Áudio NÃO é armazenado no MVP (descartado após análise)
+  -- O áudio da tentativa não fica aqui: só o aprovado (> 8) vai para recordings
   KEY idx_phrase (phrase_id),
   KEY idx_user (user_id),
   FOREIGN KEY (phrase_id) REFERENCES phrases(id) ON DELETE CASCADE,
@@ -68,4 +69,53 @@ CREATE TABLE rate_limits (
   PRIMARY KEY (user_id, action, day),
   KEY idx_action_day (action, day),    -- teto global sem full scan
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Gravação aprovada ATUAL de cada frase (nota > 8). Uma por frase: quando uma
+-- nova gravação também é aprovada, a linha é mantida e só o arquivo muda — assim
+-- toda playlist que referencia esta linha passa a tocar o áudio novo sozinha.
+CREATE TABLE recordings (
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id       INT UNSIGNED NOT NULL,
+  phrase_id     INT UNSIGNED NOT NULL,
+  attempt_id    INT UNSIGNED NULL,       -- tentativa que gerou o áudio atual
+  score         DECIMAL(3,1) NOT NULL,   -- sempre > 8.0
+  file_name     VARCHAR(40) NOT NULL,    -- nome aleatório; muda a cada substituição
+  audio_bytes   INT UNSIGNED NOT NULL,
+  audio_seconds TINYINT UNSIGNED NULL,
+  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_phrase (phrase_id),
+  KEY idx_user (user_id),
+  FOREIGN KEY (phrase_id)  REFERENCES phrases(id)  ON DELETE CASCADE,
+  FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE,
+  FOREIGN KEY (attempt_id) REFERENCES attempts(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE playlists (
+  id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id         INT UNSIGNED NOT NULL,
+  name            VARCHAR(80) NOT NULL,
+  description     VARCHAR(300) NULL,
+  shuffle_enabled TINYINT(1) NOT NULL DEFAULT 0,
+  repeat_enabled  TINYINT(1) NOT NULL DEFAULT 0,
+  created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_user_name (user_id, name),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Relacionamento, não cópia: o item aponta para a gravação. Excluir a playlist
+-- ou o item nunca toca no arquivo; excluir a frase leva a gravação e os itens.
+CREATE TABLE playlist_items (
+  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  playlist_id  INT UNSIGNED NOT NULL,
+  recording_id INT UNSIGNED NOT NULL,
+  position     INT UNSIGNED NOT NULL,
+  created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_playlist_recording (playlist_id, recording_id),
+  KEY idx_order (playlist_id, position),
+  KEY idx_recording (recording_id),
+  FOREIGN KEY (playlist_id)  REFERENCES playlists(id)  ON DELETE CASCADE,
+  FOREIGN KEY (recording_id) REFERENCES recordings(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

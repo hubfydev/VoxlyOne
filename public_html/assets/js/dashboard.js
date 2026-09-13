@@ -1,6 +1,18 @@
-/* Dashboard: toggle PT/EN por card e exclusão com confirmação. */
+/* Dashboard: toggle PT/EN por card, exclusão com confirmação e playlists. */
+
+import { openPlaylistPicker } from './playlist_picker.js';
 
 document.addEventListener('click', async (event) => {
+  const playlist = event.target.closest('[data-playlist]');
+  if (playlist) {
+    openPlaylistPicker({
+      recordingId: playlist.dataset.playlist,
+      csrf: window.CSRF_TOKEN,
+      phraseText: playlist.dataset.label,
+    });
+    return;
+  }
+
   const toggle = event.target.closest('[data-toggle-lang]');
   if (toggle) {
     togglePhraseLang(toggle);
@@ -30,7 +42,10 @@ async function deletePhrase(button) {
   const id = button.dataset.delete;
   const label = button.dataset.label || 'esta frase';
 
-  if (!confirm(`Excluir "${label}"?\n\nAs tentativas registradas também serão apagadas.`)) {
+  if (!confirm(
+    `Excluir "${label}"?\n\nAs tentativas registradas e a sua gravação aprovada também ` +
+    'serão apagadas, e a frase sai de todas as playlists.'
+  )) {
     return;
   }
 

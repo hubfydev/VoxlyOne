@@ -43,6 +43,11 @@ require APP_INCLUDES . '/header.php';
     <button class="speed" type="button" data-speed="fast"   aria-pressed="false">Rápido</button>
   </div>
 
+  <div class="speeds voices" role="group" aria-label="Voz da pronúncia">
+    <button class="speed" type="button" data-voice="female" aria-pressed="true">Voz feminina</button>
+    <button class="speed" type="button" data-voice="male"   aria-pressed="false">Voz masculina</button>
+  </div>
+
   <ul class="cards">
     <?php foreach ($phrases as $phrase): ?>
       <li class="card">

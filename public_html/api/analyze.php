@@ -5,6 +5,7 @@ require_once __DIR__ . '/../boot.php';
 require_once APP_INCLUDES . '/phrases.php';
 require_once APP_INCLUDES . '/rate_limit.php';
 require_once APP_INCLUDES . '/openai.php';
+require_once APP_INCLUDES . '/recordings.php';
 
 // Medido no spike: a análise leva ~2,3s e o teto do LiteSpeed passa de 35s.
 // Os 60s aqui são folga; o corte real é o CURLOPT_TIMEOUT de 25s.
@@ -18,7 +19,7 @@ csrf_require();
 // --- validações do usuário: acontecem ANTES de tocar na cota ----------------
 
 // O modal é client-side; sem esta checagem o consentimento seria decorativo
-if ($user['consented_at'] === null) {
+if (!has_current_consent($user)) {
     json_error('no_consent', 'É preciso aceitar o aviso de gravação antes de analisar.', 403);
 }
 
@@ -39,7 +40,8 @@ if ($_FILES['audio']['size'] > 2 * 1024 * 1024) {
 
 $wav = (string)file_get_contents($_FILES['audio']['tmp_name']);
 
-// Áudio nunca fica em disco: o PHP salva o upload em tmp, então apagamos já
+// O upload temporário do PHP sai do disco já. Só uma gravação aprovada (> 8)
+// volta a ser escrita, depois da nota — ver attach_approved_recording().
 @unlink($_FILES['audio']['tmp_name']);
 
 // Magic bytes: precisa ser mesmo um RIFF/WAVE
@@ -72,6 +74,11 @@ try {
         $ai = call_audio_model($wav, (string)$phrase['text_en'], (string)$phrase['level']);
         $result = persist_attempt($userId, $phrase, $ai['feedback'], $audioSeconds);
         $charged = false;  // gravou o attempt: a cota foi bem gasta
+
+        // Playlists: guarda o áudio só se aprovado. Nunca lança — ver recordings.php
+        $result += attach_approved_recording(
+            $userId, (int)$phrase['id'], $result['attempt_id'], $result['score'], $wav, $audioSeconds
+        );
     }
 } catch (OpenAiException $ex) {
     $failure = ['ai_failed',

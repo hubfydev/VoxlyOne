@@ -83,8 +83,8 @@ require APP_INCLUDES . '/header.php';
   <div class="danger-zone">
     <h2>Excluir conta</h2>
     <p>
-      Apaga definitivamente sua conta, suas frases, categorias e todo o histórico
-      de tentativas. Não há como desfazer.
+      Apaga definitivamente sua conta, suas frases, categorias, todo o histórico
+      de tentativas, suas gravações guardadas e playlists. Não há como desfazer.
     </p>
     <p class="form__error" id="delete-error" role="alert" hidden></p>
     <button class="btn btn--danger btn--block" type="button" id="btn-delete">

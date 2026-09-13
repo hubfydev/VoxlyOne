@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../boot.php';
 require_once APP_INCLUDES . '/phrases.php';
+require_once APP_INCLUDES . '/recordings.php';
 
 require_method('POST');
 $user = require_auth_api();
@@ -132,12 +133,19 @@ function action_delete(array $user): never
 {
     $id = (int)($_POST['id'] ?? 0);
 
-    // As tentativas somem junto pela FK ON DELETE CASCADE
+    // O arquivo da gravação aprovada não some por cascata: guarda o nome antes
+    $recording = find_recording_by_phrase((int)$user['id'], $id);
+
+    // Tentativas, gravação aprovada e itens de playlist somem pelas FKs ON DELETE CASCADE
     $stmt = db()->prepare('DELETE FROM phrases WHERE id = ? AND user_id = ?');
     $stmt->execute([$id, $user['id']]);
 
     if ($stmt->rowCount() === 0) {
         json_error('not_found', 'Frase não encontrada.', 404);
+    }
+
+    if ($recording !== null) {
+        delete_recording_file((int)$user['id'], (string)$recording['file_name']);
     }
 
     json_ok(['id' => $id]);

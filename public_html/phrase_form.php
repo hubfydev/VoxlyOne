@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/boot.php';
 require_once APP_INCLUDES . '/phrases.php';
+require_once APP_INCLUDES . '/recordings.php';
 
 $user   = require_auth();
 $userId = (int)$user['id'];
@@ -16,6 +17,7 @@ if ($id > 0 && $phrase === null) {
 
 $isEdit     = $phrase !== null;
 $categories = list_categories($userId);
+$recording  = $isEdit ? find_recording_by_phrase($userId, (int)$phrase['id']) : null;
 
 $pageTitle = $isEdit ? 'Editar frase — VoxlyOne' : 'Nova frase — VoxlyOne';
 require APP_INCLUDES . '/header.php';
@@ -87,6 +89,35 @@ require APP_INCLUDES . '/header.php';
   </button>
 </form>
 
-<script src="/assets/js/phrase_form.js"></script>
+<?php if ($isEdit): ?>
+  <section class="my-recording">
+    <h2>Sua gravação aprovada</h2>
+    <?php if ($recording !== null): ?>
+      <p class="my-recording__meta">
+        Nota <?= e(number_format((float)$recording['score'], 1, ',', '')) ?>
+        · gravada em <?= e(format_date($recording['updated_at'])) ?>
+      </p>
+      <audio controls preload="none" src="<?= e(recording_url($recording)) ?>"></audio>
+      <div class="my-recording__actions">
+        <button class="btn btn--sm" type="button" id="btn-playlist"
+                data-recording="<?= (int)$recording['id'] ?>"
+                data-label="<?= e($phrase['text_en']) ?>">Adicionar à playlist</button>
+        <a class="btn btn--sm btn--ghost" href="/practice.php?id=<?= (int)$phrase['id'] ?>">Gravar de novo</a>
+      </div>
+      <p class="field__hint">
+        Uma nova gravação com nota acima de 8 substitui esta em todas as playlists.
+        Com nota até 8, esta continua valendo.
+      </p>
+    <?php else: ?>
+      <p class="field__hint">
+        Tire nota acima de 8 na prática para guardar sua gravação e ouvi-la nas playlists.
+      </p>
+      <button class="btn btn--sm btn--ghost" type="button" disabled>Adicionar à playlist</button>
+      <a class="btn btn--sm btn--ghost" href="/practice.php?id=<?= (int)$phrase['id'] ?>">Praticar</a>
+    <?php endif; ?>
+  </section>
+<?php endif; ?>
+
+<script type="module" src="/assets/js/phrase_form.js"></script>
 
 <?php require APP_INCLUDES . '/footer.php'; ?>

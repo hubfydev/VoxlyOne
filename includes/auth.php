@@ -1,6 +1,13 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * Versão do texto de consentimento de gravação em vigor.
+ * v1: o áudio era sempre descartado. v2: gravações com nota > 8 ficam guardadas
+ * para as playlists. Quem aceitou uma versão anterior precisa aceitar de novo.
+ */
+const CONSENT_VERSION = 2;
+
 /** Usuário logado, ou null. Faz uma única consulta por request. */
 function current_user(): ?array
 {
@@ -18,7 +25,7 @@ function current_user(): ?array
     }
 
     $stmt = db()->prepare(
-        'SELECT id, google_id, email, name, avatar_url, consented_at, created_at
+        'SELECT id, google_id, email, name, avatar_url, consented_at, consent_version, created_at
            FROM users WHERE id = ?'
     );
     $stmt->execute([$id]);
@@ -32,6 +39,12 @@ function current_user(): ?array
 
     $user = $row;
     return $user;
+}
+
+/** O usuário aceitou o texto de consentimento ATUAL? */
+function has_current_consent(array $user): bool
+{
+    return $user['consented_at'] !== null && (int)$user['consent_version'] >= CONSENT_VERSION;
 }
 
 /** Topo de toda PÁGINA protegida: sem sessão, volta para a landing. */

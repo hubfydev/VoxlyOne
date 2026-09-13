@@ -46,6 +46,11 @@ require APP_INCLUDES . '/header.php';
     <button class="speed" type="button" data-speed="fast"   aria-pressed="false">Rápido</button>
   </div>
 
+  <div class="speeds voices" role="group" aria-label="Voz da pronúncia">
+    <button class="speed" type="button" data-voice="female" aria-pressed="true">Voz feminina</button>
+    <button class="speed" type="button" data-voice="male"   aria-pressed="false">Voz masculina</button>
+  </div>
+
   <button class="btn btn--block" type="button" id="btn-play">🔊 Ouvir pronúncia</button>
 
   <div class="recorder">
@@ -83,8 +88,14 @@ require APP_INCLUDES . '/header.php';
     <h2 id="consent-title">Sobre sua gravação</h2>
     <p>
       Para avaliar sua pronúncia, o áudio é enviado a um serviço de inteligência
-      artificial (OpenAI) e <strong>descartado logo em seguida</strong>. Nada de
-      áudio é guardado nos nossos servidores — só a nota e o texto do feedback.
+      artificial (OpenAI). Gravações com nota <strong>até 8</strong> são
+      <strong>descartadas logo em seguida</strong> — delas guardamos só a nota e o
+      feedback.
+    </p>
+    <p>
+      Quando a nota passa de 8, guardamos <strong>a última gravação aprovada</strong>
+      de cada frase para você ouvir a própria voz nas suas playlists. Só você tem
+      acesso a ela, e ela é apagada quando você exclui a frase ou a conta.
     </p>
     <p>
       Detalhes na <a href="/privacy.php" target="_blank" rel="noopener">Política de privacidade</a>.
@@ -101,7 +112,7 @@ window.PRACTICE = {
   phraseId: <?= (int)$phrase['id'] ?>,
   textEn: <?= json_encode($phrase['text_en'], JSON_UNESCAPED_UNICODE) ?>,
   csrf: <?= json_encode(csrf_token()) ?>,
-  consented: <?= $user['consented_at'] !== null ? 'true' : 'false' ?>,
+  consented: <?= has_current_consent($user) ? 'true' : 'false' ?>,
   attempts: <?= (int)$phrase['attempts_count'] ?>
 };
 </script>

@@ -24,6 +24,7 @@ $navUser   = current_user();
   <a class="nav__brand" href="/dashboard.php">VoxlyOne</a>
   <div class="nav__links">
     <a href="/dashboard.php">Frases</a>
+    <a href="/playlists.php">Playlists</a>
     <a href="/mastered.php">Conquistas</a>
     <a href="/profile.php">
       <?php if (!empty($navUser['avatar_url'])): ?>

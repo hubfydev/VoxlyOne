@@ -12,13 +12,15 @@ require APP_INCLUDES . '/header.php';
 
 <article class="legal">
   <h1>Termos de Uso</h1>
-  <p class="legal__date">Última atualização: agosto de 2026</p>
+  <p class="legal__date">Última atualização: setembro de 2026</p>
 
   <h2>O que é o VoxlyOne</h2>
   <p>
     O VoxlyOne é uma ferramenta de estudo que ajuda falantes de português a
     treinar a pronúncia do inglês. Você cadastra frases, ouve a pronúncia, grava
-    sua voz e recebe uma avaliação automática com nota e dicas.
+    sua voz e recebe uma avaliação automática com nota e dicas. As gravações com
+    nota acima de 8 podem ser organizadas em playlists para você ouvir a própria
+    voz.
   </p>
   <p>
     O serviço é operado pela <strong>Hubfy LLC</strong>, na Flórida,
@@ -57,9 +59,11 @@ require APP_INCLUDES . '/header.php';
 
   <h2>Seu conteúdo</h2>
   <p>
-    As frases que você cadastra continuam sendo suas. Você nos concede apenas a
-    permissão necessária para armazená-las e processá-las para fazer o serviço
-    funcionar. Não usamos seu conteúdo para treinar modelos próprios.
+    As frases que você cadastra e as gravações da sua voz continuam sendo suas.
+    Você nos concede apenas a permissão necessária para armazená-las e
+    processá-las para fazer o serviço funcionar — incluindo guardar suas
+    gravações aprovadas para as playlists. Não usamos seu conteúdo para treinar
+    modelos próprios.
   </p>
 
   <h2>Sobre a avaliação automática</h2>

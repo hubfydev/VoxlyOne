@@ -7,10 +7,12 @@ require_method('POST');
 $user = require_auth_api();
 csrf_require();
 
-// Idempotente: registra o primeiro aceite e não sobrescreve depois
+// Idempotente: registra o aceite da versão atual e não sobrescreve depois.
+// Quem aceitou uma versão anterior do texto ganha data e versão novas.
 $stmt = db()->prepare(
-    'UPDATE users SET consented_at = NOW() WHERE id = ? AND consented_at IS NULL'
+    'UPDATE users SET consented_at = NOW(), consent_version = ?
+      WHERE id = ? AND (consented_at IS NULL OR consent_version < ?)'
 );
-$stmt->execute([$user['id']]);
+$stmt->execute([CONSENT_VERSION, $user['id'], CONSENT_VERSION]);
 
 json_ok(['consented' => true]);

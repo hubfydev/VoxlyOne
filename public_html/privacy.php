@@ -12,7 +12,7 @@ require APP_INCLUDES . '/header.php';
 
 <article class="legal">
   <h1>Política de Privacidade</h1>
-  <p class="legal__date">Última atualização: agosto de 2026</p>
+  <p class="legal__date">Última atualização: setembro de 2026</p>
 
   <h2>Quem somos</h2>
   <p>
@@ -42,6 +42,10 @@ require APP_INCLUDES . '/header.php';
       <strong>Resultados das análises:</strong> a nota de cada tentativa, o texto
       que a inteligência artificial entendeu e o feedback gerado.
     </li>
+    <li>
+      <strong>Gravações aprovadas:</strong> o áudio da sua última gravação com nota
+      acima de 8 em cada frase, e as playlists que você monta com elas.
+    </li>
   </ul>
   <p>
     Não usamos cookies de rastreamento, não temos publicidade e não fazemos
@@ -52,22 +56,38 @@ require APP_INCLUDES . '/header.php';
   <p>Este é o ponto mais importante desta política, então vamos ser diretos:</p>
   <ul>
     <li>
-      Sua gravação é enviada ao nosso servidor, repassada imediatamente à
-      <strong>OpenAI</strong> para análise da pronúncia e
-      <strong>descartada em seguida</strong>.
+      Sua gravação é enviada ao nosso servidor e repassada imediatamente à
+      <strong>OpenAI</strong> para análise da pronúncia.
     </li>
     <li>
-      O áudio <strong>não é gravado em disco</strong> nem armazenado em banco de
-      dados. Ele existe apenas na memória do servidor durante os poucos segundos
-      da análise.
+      Se a nota for <strong>8 ou menos</strong>, o áudio é
+      <strong>descartado em seguida</strong>: não é gravado em disco nem em banco
+      de dados. Dessa tentativa guardamos só o resultado em texto — a nota e o
+      feedback.
     </li>
     <li>
-      O que fica guardado é somente o <strong>resultado em texto</strong>: a nota
-      e o feedback.
+      Se a nota for <strong>maior que 8</strong>, guardamos o áudio para que você
+      possa ouvir a própria voz nas suas playlists. Fica guardada apenas
+      <strong>a última gravação aprovada de cada frase</strong>: uma nova aprovação
+      substitui a anterior, que é apagada.
     </li>
     <li>
-      Pedimos seu consentimento explícito antes da primeira gravação e
-      registramos a data desse aceite.
+      Esses áudios ficam numa área privada do servidor, fora do acesso público, e
+      <strong>só você consegue ouvi-los</strong>, depois de entrar na sua conta.
+      Não os compartilhamos com ninguém e não os usamos para treinar modelos.
+    </li>
+    <li>
+      Não usamos sua voz para identificar você e não criamos impressão vocal
+      (<em>voiceprint</em>) nem qualquer outro dado biométrico a partir dela.
+    </li>
+    <li>
+      Você apaga a gravação guardada excluindo a frase, e todas elas excluindo a
+      conta. Tirar uma gravação de uma playlist, ou excluir a playlist, não apaga
+      o áudio.
+    </li>
+    <li>
+      Pedimos seu consentimento explícito antes da primeira gravação, registramos
+      a data desse aceite e pedimos de novo sempre que esta seção mudar.
     </li>
   </ul>
 
@@ -89,7 +109,8 @@ require APP_INCLUDES . '/header.php';
     usuários: acessar os dados que temos sobre você, corrigi-los, revogar o
     consentimento e <strong>excluir sua conta com todos os dados associados</strong>,
     por um botão na página de Perfil. A exclusão é imediata e definitiva, e remove
-    frases, categorias e todo o histórico de tentativas.
+    frases, categorias, todo o histórico de tentativas, as gravações guardadas e
+    as playlists.
   </p>
   <p>
     <strong>Residentes nos Estados Unidos:</strong> alguns estados — como
@@ -122,8 +143,8 @@ require APP_INCLUDES . '/header.php';
 
   <h2>Por quanto tempo guardamos</h2>
   <p>
-    Enquanto sua conta existir. Ao excluí-la, os dados são apagados do banco na
-    mesma hora. Cópias de segurança rotineiras podem reter informações por até 30
+    Enquanto sua conta existir. Ao excluí-la, os dados são apagados do banco e os
+    arquivos de áudio são apagados do servidor na mesma hora. Cópias de segurança rotineiras podem reter informações por até 30
     dias adicionais antes de serem sobrescritas.
   </p>
 
@@ -131,8 +152,8 @@ require APP_INCLUDES . '/header.php';
   <p>
     Todo o tráfego usa HTTPS. As credenciais de acesso ficam fora da área pública
     do servidor, e cada usuário só enxerga os próprios dados. Nenhum sistema é
-    infalível, mas tratamos o mínimo de dados possível — a começar por não guardar
-    seu áudio.
+    infalível, mas tratamos o mínimo de dados possível — a começar por descartar
+    todo áudio que não foi aprovado e guardar só uma gravação por frase.
   </p>
 
   <h2>Alterações</h2>

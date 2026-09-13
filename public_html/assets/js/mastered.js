@@ -1,8 +1,9 @@
 /* Conquistas: play por card, na velocidade escolhida no topo. */
 
-import { speak } from './player.js';
+import { speak, bindVoiceButtons } from './player.js';
 
 const speedButtons = document.querySelectorAll('[data-speed]');
+const currentVoice = bindVoiceButtons(document.querySelectorAll('[data-voice]'));
 let speed = sessionStorage.getItem('voxly.speed') || 'normal';
 
 // A velocidade é a mesma da tela de prática (sessionStorage compartilhado)
@@ -30,6 +31,7 @@ document.addEventListener('click', (event) => {
 
   button.disabled = true;
   speak(button.dataset.play, speed, {
+    voice: currentVoice(),
     onEnd: () => { button.disabled = false; },
   });
 });

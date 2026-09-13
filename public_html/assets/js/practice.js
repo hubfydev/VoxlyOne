@@ -1,14 +1,16 @@
 /* Orquestra a tela de prática: play → gravar → analisar → feedback (seção 7). */
 
-import { speak } from './player.js';
+import { speak, bindVoiceButtons } from './player.js';
 import { Recorder } from './recorder.js';
 import { celebrate } from './confetti.js';
+import { openPlaylistPicker } from './playlist_picker.js';
 
 const data = window.PRACTICE;
 const $ = (id) => document.getElementById(id);
 
 const els = {
   speedButtons: document.querySelectorAll('[data-speed]'),
+  voiceButtons: document.querySelectorAll('[data-voice]'),
   play: $('btn-play'),
   record: $('btn-record'),
   timer: $('rec-timer'),
@@ -40,6 +42,7 @@ const recorder = new Recorder({
 });
 
 highlightSpeed();
+const currentVoice = bindVoiceButtons(els.voiceButtons);
 
 // --- velocidade -------------------------------------------------------------
 
@@ -65,6 +68,7 @@ els.play.addEventListener('click', () => {
   els.play.disabled = true;
 
   speak(data.textEn, speed, {
+    voice: currentVoice(),
     // Habilita GRAVAR já no início do play: no Safari iOS o evento 'end' é
     // pouco confiável e travaria o app se fosse a única condição.
     onStart: () => {
@@ -244,6 +248,8 @@ function renderFeedback(result) {
     ${fb.speed_feedback ? `<p class="fb-note">${escapeHtml(fb.speed_feedback)}</p>` : ''}
     ${fb.main_tip ? `<p class="fb-tip">💡 ${escapeHtml(fb.main_tip)}</p>` : ''}
 
+    ${buildPlaylistBox(result)}
+
     <div class="fb-actions">${buildActions(result)}</div>
   `;
 
@@ -253,6 +259,49 @@ function renderFeedback(result) {
   if (result.is_mastered) celebrate();
 
   wireActions(result);
+  wirePlaylist(result);
+}
+
+/**
+ * Playlists (nota > 8): a gravação acabou de ser guardada e pode entrar em
+ * playlists agora ou depois. Com nota ≤ 8, só avisa que a aprovada anterior
+ * continua valendo. Não mexe nos botões de ação da prática.
+ */
+function buildPlaylistBox(result) {
+  if (result.playlist_eligible && result.recording) {
+    const note = result.recording.replaced
+      ? 'Esta gravação substituiu a anterior em todas as suas playlists.'
+      : 'Sua gravação foi aprovada e pode entrar nas suas playlists.';
+    return `
+      <div class="fb-playlist">
+        <p>🎧 ${escapeHtml(note)}</p>
+        <button class="btn btn--sm btn--ghost" type="button" id="fb-playlist">Adicionar à playlist</button>
+      </div>`;
+  }
+  if (result.recording) {
+    return `
+      <div class="fb-playlist fb-playlist--muted">
+        <p>Sua gravação aprovada anterior continua nas playlists.</p>
+      </div>`;
+  }
+  return '';
+}
+
+function wirePlaylist(result) {
+  $('fb-playlist')?.addEventListener('click', () => {
+    openPlaylistPicker({
+      recordingId: result.recording.id,
+      csrf: data.csrf,
+      phraseText: data.textEn,
+      onSaved: (playlists) => {
+        const button = $('fb-playlist');
+        if (!button) return;
+        button.textContent = playlists.length
+          ? `Em ${playlists.length} playlist${playlists.length > 1 ? 's' : ''} ✓`
+          : 'Adicionar à playlist';
+      },
+    });
+  });
 }
 
 /**

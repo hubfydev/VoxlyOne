@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/boot.php';
 require_once APP_INCLUDES . '/phrases.php';
+require_once APP_INCLUDES . '/recordings.php';
 
 $user   = require_auth();
 $userId = (int)$user['id'];
@@ -55,9 +56,10 @@ $page   = min($page, $pages);
 $offset = ($page - 1) * $perPage;
 
 // --- página atual ------------------------------------------------------------
-$sql = "SELECT p.*, c.name AS category_name
+$sql = "SELECT p.*, c.name AS category_name, r.id AS recording_id
           FROM phrases p
           LEFT JOIN categories c ON c.id = p.category_id
+          LEFT JOIN recordings r ON r.phrase_id = p.id AND r.user_id = p.user_id
          WHERE {$whereSql}
          ORDER BY {$orderSql}
          LIMIT :limit OFFSET :offset";
@@ -188,6 +190,15 @@ require APP_INCLUDES . '/header.php';
           <?php if ($phrase['text_pt'] !== null): ?>
             <button class="btn btn--sm btn--ghost" type="button" data-toggle-lang>Ver PT</button>
           <?php endif; ?>
+          <?php if ($phrase['recording_id'] !== null): ?>
+            <button class="btn btn--sm btn--ghost" type="button"
+                    data-playlist="<?= (int)$phrase['recording_id'] ?>"
+                    data-label="<?= e($phrase['text_en']) ?>">+ Playlist</button>
+          <?php elseif ($phrase['best_score'] !== null && recording_is_approved((float)$phrase['best_score'])): ?>
+            <?php /* Aprovada antes das playlists existirem: o áudio não foi guardado */ ?>
+            <button class="btn btn--sm btn--ghost" type="button" disabled
+                    title="Pratique de novo e tire mais de 8 para salvar sua gravação">+ Playlist</button>
+          <?php endif; ?>
           <a class="btn btn--sm btn--ghost" href="/phrase_form.php?id=<?= (int)$phrase['id'] ?>">Editar</a>
           <button class="btn btn--sm btn--danger" type="button"
                   data-delete="<?= (int)$phrase['id'] ?>"
@@ -213,6 +224,6 @@ require APP_INCLUDES . '/header.php';
 <a class="fab" href="/phrase_form.php" aria-label="Nova frase">+</a>
 
 <script>window.CSRF_TOKEN = <?= json_encode(csrf_token()) ?>;</script>
-<script src="/assets/js/dashboard.js"></script>
+<script type="module" src="/assets/js/dashboard.js"></script>
 
 <?php require APP_INCLUDES . '/footer.php'; ?>

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../boot.php';
+require_once APP_INCLUDES . '/recordings.php';
 
 require_method('POST');
 $user = require_auth_api();
@@ -12,9 +13,13 @@ if ((string)($_POST['confirm'] ?? '') !== 'EXCLUIR') {
     json_error('not_confirmed', 'Confirmação inválida.', 422);
 }
 
-// Frases, categorias, tentativas e rate_limits somem pelas FKs ON DELETE CASCADE
+// Frases, categorias, tentativas, gravações, playlists e rate_limits somem
+// pelas FKs ON DELETE CASCADE
 $stmt = db()->prepare('DELETE FROM users WHERE id = ?');
 $stmt->execute([$user['id']]);
+
+// Os arquivos de áudio não estão no banco: apaga a pasta do usuário
+delete_user_recordings((int)$user['id']);
 
 // Derruba a sessão antes de responder
 $_SESSION = [];

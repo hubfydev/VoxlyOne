@@ -27,3 +27,6 @@ desktop.ini
 
 # Arquivos temporários do Claude Code
 .claude/*.tmp.*
+
+# Gravações aprovadas dos usuários (áudio) — só existem no servidor
+storage/

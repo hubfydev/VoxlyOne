@@ -37,7 +37,8 @@ IA: OpenAI `gpt-audio-1.5` via cURL · Auth: Google OAuth 2.0 manual + sessões 
   `http_response_code` correto; 401 JSON se sem sessão, nunca redirect
 - Toda página protegida começa com `require_auth()`; toda query filtra por
   `user_id` da sessão
-- Nunca salvar o áudio em disco — processar em memória e descartar
+- Áudio com nota ≤ 8 nunca vai para disco — processar em memória e descartar.
+  Só a gravação aprovada (> 8) é guardada, via `includes/recordings.php`
 - Mensagens de erro ao usuário: genéricas e em PT-BR; detalhes técnicos só no log
 - JS sem frameworks e sem build: estáticos em `assets/js`, ES6+, sem CDN.
   O confetti é ~20 linhas de canvas próprio.
@@ -88,6 +89,26 @@ Sem isso, uma falha entre os dois deixa `attempts_count` divergente para sempre.
 **Consentimento**: `analyze.php` retorna 403 se `consented_at` for NULL. O modal é
 client-side; quem grava é `api/consent.php`.
 
+**Playlists (12/09/2026)** — a playlist toca a **voz do usuário**, nunca a voz
+sintetizada de referência. Regras:
+- Entra em playlist só gravação com `score > 8` (estrito: `8.0` avança na prática
+  mas NÃO entra). Constante `PLAYLIST_MIN_SCORE`, checada também no servidor.
+- `recordings` guarda UMA gravação aprovada atual por frase (`UNIQUE phrase_id`).
+  Nova aprovação mantém a linha e troca só o arquivo → todas as playlists passam a
+  tocar o áudio novo sem update. Nota ≤ 8 não mexe na aprovada.
+- Ordem ao substituir: grava arquivo novo → troca referência no banco → apaga o antigo.
+- `attach_approved_recording()` NUNCA lança: falha ao guardar áudio não pode virar
+  erro numa análise já paga.
+- `playlist_items` referencia `recording_id` — nada de copiar arquivo.
+- Arquivos em `voxly-app/storage/recordings/{user_id}/`, servidos só pelo
+  `recording.php` (confere o dono, suporta Range — o Safari iOS exige).
+- FK não apaga arquivo: exclusão de frase e de conta apagam os arquivos explicitamente.
+- Excluir playlist ou remover item nunca apaga áudio.
+
+**Consentimento versionado**: `CONSENT_VERSION` em `auth.php` (hoje 2). Mudou o
+texto do modal/privacidade sobre gravações → incrementar, e todos aceitam de novo.
+Usar `has_current_consent($user)`, não `consented_at !== null`.
+
 **Nunca usar Whisper nem qualquer modelo `*-transcribe`** para transcrever antes de
 avaliar — eles corrigem o sotaque e apagam exatamente o erro que queremos medir.
 
@@ -107,16 +128,21 @@ irmã de `public_html`:
 ├── voxly-app/                 # privado — nenhum document root aponta para cá
 │   ├── config/config.php      # secrets
 │   ├── logs/app.log
+│   ├── storage/recordings/    # gravações aprovadas (criada sozinha; fora do git)
 │   └── includes/
-│       ├── bootstrap.php  auth.php  db.php  csrf.php
-│       └── rate_limit.php  openai.php  header.php  footer.php
+│       ├── bootstrap.php  auth.php  db.php  csrf.php  phrases.php
+│       ├── rate_limit.php  openai.php  header.php  footer.php
+│       └── recordings.php  playlists.php
 └── public_html/               # ← document root do hubfy.app
     └── voxly/                 # ← document root do voxly.hubfy.app
         ├── index.php  dashboard.php  phrase_form.php  practice.php
         ├── mastered.php  profile.php  privacy.php  terms.php
+        ├── playlists.php  playlist.php  recording.php
         ├── auth/{login,callback,logout}.php
-        ├── api/{analyze,translate,phrases,consent,delete_account,health}.php
-        ├── assets/css/app.css  assets/js/{recorder,player,practice}.js
+        ├── api/{analyze,translate,phrases,playlists,consent,delete_account,health}.php
+        ├── assets/css/app.css
+        ├── assets/js/{recorder,player,practice,...}.js
+        ├── assets/js/{playlist_picker,playlist_queue,playlist_player,playlists}.js
         └── .htaccess
 ```
 
@@ -138,7 +164,9 @@ gerenciador de arquivos não dá acesso à home), sem editar arquivo nenhum.
 Depois do bootstrap carregado, use a constante `APP_INCLUDES` para incluir
 `header.php` e `footer.php`.
 
-Endpoints `/api` são todos POST (exceto `health.php`, GET público).
+Endpoints `/api` são todos POST (exceto `health.php`, GET público). O áudio das
+gravações sai pelo `recording.php` na raiz (GET, sem efeito colateral, não é JSON).
+Migrations incrementais ficam em `db/migrations/` e rodam ANTES de subir o código.
 Nada de PUT/DELETE: em hospedagem compartilhada o corpo não chega em `$_POST` e
 WAFs bloqueiam. CRUD via `action=create|update|delete`.
 
@@ -167,7 +195,16 @@ para que `CURDATE()` do rate limit zere no horário certo. Datas exibidas via
 `format_date()`, no formato "12 ago 2026" — o numérico seria ambíguo entre os
 dois públicos.
 
+**Playlists (12/09/2026)**: gravações aprovadas (> 8) guardadas, playlists com
+Shuffle/Repeat independentes e salvos por playlist, player da própria voz, seletor
+de voz feminina/masculina na referência (por nome da voz; sem voz do gênero no
+aparelho, aproxima pelo tom). Testado localmente em MariaDB 11 + PHP 8.3 (19
+testes de API + 20 de navegador). Deploy exige rodar
+`db/migrations/2026-09-12_playlists.sql` antes de subir os arquivos.
+
 **Pendências:**
+- Rodar a migration de playlists no servidor e testar playlists no iPhone real
+  (Range/autoplay entre faixas com tela bloqueada)
 - Fase 8 (polimento) não iniciada: animações, toasts, revisão em telas pequenas
 - Ainda não testado o ciclo completo até a nota 10 (confetti + entrada em Conquistas)
 - Resolvido: PHP 8.3 no servidor; dados legais preenchidos; bug do modal de
