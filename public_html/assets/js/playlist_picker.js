@@ -7,6 +7,8 @@
  * aqui também remove a gravação daquela playlist.
  */
 
+import { icon } from './icons.js';
+
 let modal = null;
 
 export function openPlaylistPicker({ recordingId, csrf, phraseText = '', onSaved } = {}) {
@@ -61,10 +63,18 @@ export function openPlaylistPicker({ recordingId, csrf, phraseText = '', onSaved
     label.className = 'picker__item';
     label.innerHTML = `
       <input type="checkbox" value="${Number(playlist.id)}">
-      <span class="picker__name"></span>
-      <span class="picker__count"></span>`;
+      <span class="picker__check" aria-hidden="true">${icon('check')}</span>
+      <span class="pl-cover pl-cover--sm pl-cover--${Number(playlist.id) % 6}" aria-hidden="true">
+        <span class="pl-cover__letter"></span>
+      </span>
+      <span class="picker__text">
+        <span class="picker__name"></span>
+        <span class="picker__count"></span>
+      </span>`;
     label.querySelector('input').checked = checked;
     label.querySelector('.picker__name').textContent = playlist.name;
+    // Primeiro caractere completo (não quebra emoji) para a capa
+    label.querySelector('.pl-cover__letter').textContent = ([...String(playlist.name).trim()][0] || '♪').toUpperCase();
     const count = Number(playlist.items_count) || 0;
     label.querySelector('.picker__count').textContent = `${count} ${count === 1 ? 'frase' : 'frases'}`;
     els.list.append(label);
@@ -160,23 +170,31 @@ function buildModal(phraseText) {
   wrapper.className = 'modal';
   wrapper.innerHTML = `
     <div class="modal__box picker" role="dialog" aria-modal="true" aria-labelledby="picker-title">
-      <h2 id="picker-title">Adicionar à playlist</h2>
-      <p class="picker__phrase"></p>
+      <div class="picker__head">
+        <span class="picker__icon" aria-hidden="true">${icon('list-plus')}</span>
+        <div class="picker__heading">
+          <h2 id="picker-title">Adicionar à playlist</h2>
+          <p class="picker__phrase"></p>
+        </div>
+      </div>
+      <p class="picker__hint">Pode marcar mais de uma playlist.</p>
       <div class="picker__list" data-pk-list>
-        <span class="loading__dot"></span><span class="loading__dot"></span><span class="loading__dot"></span>
+        <span class="picker__loading"><span class="loading__dot"></span><span class="loading__dot"></span><span class="loading__dot"></span></span>
       </div>
       <p class="picker__empty" data-pk-empty hidden>Você ainda não tem playlists. Crie a primeira abaixo.</p>
 
-      <button class="btn btn--sm btn--ghost btn--block" type="button" data-pk-new-toggle>+ Nova playlist</button>
+      <button class="picker__new-toggle" type="button" data-pk-new-toggle>
+        <span class="picker__new-plus" aria-hidden="true">${icon('plus')}</span>Nova playlist
+      </button>
       <div class="picker__new" data-pk-new-form hidden>
         <label class="sr-only" for="picker-new-name">Nome da playlist</label>
-        <input id="picker-new-name" type="text" maxlength="80" placeholder="Nome da playlist" data-pk-new-name>
+        <input id="picker-new-name" type="text" maxlength="80" placeholder="Nome da nova playlist" data-pk-new-name>
         <button class="btn btn--sm" type="button" data-pk-new-submit>Criar</button>
       </div>
 
       <p class="form__error" role="alert" data-pk-error hidden></p>
 
-      <div class="modal__actions">
+      <div class="modal__actions picker__actions">
         <button class="btn btn--ghost" type="button" data-pk-cancel>Agora não</button>
         <button class="btn" type="button" data-pk-save disabled>Salvar</button>
       </div>

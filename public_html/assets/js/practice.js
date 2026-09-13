@@ -4,6 +4,7 @@ import { speak, bindVoiceButtons } from './player.js';
 import { Recorder } from './recorder.js';
 import { celebrate } from './confetti.js';
 import { openPlaylistPicker } from './playlist_picker.js';
+import { icon } from './icons.js';
 
 const data = window.PRACTICE;
 const $ = (id) => document.getElementById(id);
@@ -103,7 +104,7 @@ async function beginRecording() {
   showError('');
   try {
     await recorder.start();
-    els.record.textContent = '⏹ Parar';
+    setRecordLabel(true);
     els.record.classList.add('is-recording');
     els.previewBox.hidden = true;
     els.feedback.hidden = true;
@@ -116,7 +117,7 @@ async function beginRecording() {
 }
 
 async function finishRecording() {
-  els.record.textContent = '🎤 Gravar';
+  setRecordLabel(false);
   els.record.classList.remove('is-recording');
   els.wave.style.transform = 'scaleY(0.2)';
 
@@ -128,6 +129,13 @@ async function finishRecording() {
   } catch (error) {
     showError(error.message);
   }
+}
+
+/** Troca ícone + rótulo do botão redondo (Gravar ⇄ Parar) sem perder o ícone. */
+function setRecordLabel(recording) {
+  els.record.innerHTML = recording
+    ? `${icon('square', 'rec-btn__icon')}<span class="rec-btn__label">Parar</span>`
+    : `${icon('mic', 'rec-btn__icon')}<span class="rec-btn__label">Gravar</span>`;
 }
 
 els.again.addEventListener('click', () => {
@@ -224,29 +232,63 @@ function renderFeedback(result) {
   }
 
   const errors = Array.isArray(fb.errors) ? fb.errors : [];
+  const ringIcon = { mastered: 'crown', approved: 'circle-check', low: 'target' }[tone];
+  const subline = {
+    mastered: 'Pronúncia perfeita — o selo de ouro é seu.',
+    approved: 'Você já pode avançar. Com 10, a frase ganha o selo de ouro.',
+    low: 'Com 8 você avança. Ouça de novo e siga as dicas abaixo.',
+  }[tone];
+  // Nota limitada a 0–10 só para desenhar o anel
+  const ringScore = Math.max(0, Math.min(10, Number.isFinite(score) ? score : 0));
 
   els.feedback.innerHTML = `
-    <div class="score score--${tone}">
-      <span class="score__value">${score.toFixed(1).replace('.', ',')}</span>
+    <div class="score score--${tone}" style="--score: ${ringScore}">
+      <div class="score__ring">
+        <span class="score__badge">${icon(ringIcon)}</span>
+        <span class="score__value">${score.toFixed(1).replace('.', ',')}</span>
+        <span class="score__max">de 10</span>
+      </div>
       <span class="score__verdict">${escapeHtml(verdict)}</span>
+      <p class="score__sub">${escapeHtml(subline)}</p>
     </div>
 
-    ${fb.heard ? `<p class="fb-heard"><strong>Ouvimos:</strong> "${escapeHtml(fb.heard)}"</p>` : ''}
-    ${fb.positives ? `<p class="fb-positive">✓ ${escapeHtml(fb.positives)}</p>` : ''}
+    ${fb.heard ? `
+      <div class="fb-heard">
+        <span class="fb-label">${icon('ear')}Ouvimos</span>
+        <p lang="en">“${escapeHtml(fb.heard)}”</p>
+      </div>` : ''}
+
+    ${fb.positives ? `<p class="fb-positive">${icon('circle-check')}<span>${escapeHtml(fb.positives)}</span></p>` : ''}
 
     ${errors.length ? `
-      <ul class="fb-errors">
-        ${errors.map((e) => `
-          <li>
-            <strong>${escapeHtml(e.word ?? '')}</strong>
-            <span class="fb-errors__said">você disse "${escapeHtml(e.said ?? '')}"</span>
-            <span class="fb-errors__tip">${escapeHtml(e.tip ?? '')}</span>
-          </li>`).join('')}
-      </ul>` : ''}
+      <div class="fb-section">
+        <span class="fb-label">${icon('target')}Para ajustar</span>
+        <ul class="fb-errors">
+          ${errors.map((e) => `
+            <li>
+              <div class="fb-errors__head">
+                <strong lang="en">${escapeHtml(e.word ?? '')}</strong>
+                <span class="fb-errors__said">você disse “${escapeHtml(e.said ?? '')}”</span>
+              </div>
+              <span class="fb-errors__tip">${icon('arrow-right')}<span>${escapeHtml(e.tip ?? '')}</span></span>
+            </li>`).join('')}
+        </ul>
+      </div>` : ''}
 
-    ${fb.naturalness ? `<p class="fb-note">${escapeHtml(fb.naturalness)}</p>` : ''}
-    ${fb.speed_feedback ? `<p class="fb-note">${escapeHtml(fb.speed_feedback)}</p>` : ''}
-    ${fb.main_tip ? `<p class="fb-tip">💡 ${escapeHtml(fb.main_tip)}</p>` : ''}
+    ${fb.naturalness || fb.speed_feedback ? `
+      <div class="fb-notes">
+        ${fb.naturalness ? `<p class="fb-note">${icon('audio-lines')}<span>${escapeHtml(fb.naturalness)}</span></p>` : ''}
+        ${fb.speed_feedback ? `<p class="fb-note">${icon('gauge')}<span>${escapeHtml(fb.speed_feedback)}</span></p>` : ''}
+      </div>` : ''}
+
+    ${fb.main_tip ? `
+      <div class="fb-tip">
+        <span class="fb-tip__icon">${icon('lightbulb')}</span>
+        <div>
+          <span class="fb-tip__label">Dica principal</span>
+          <p>${escapeHtml(fb.main_tip)}</p>
+        </div>
+      </div>` : ''}
 
     ${buildPlaylistBox(result)}
 
@@ -274,13 +316,15 @@ function buildPlaylistBox(result) {
       : 'Sua gravação foi aprovada e pode entrar nas suas playlists.';
     return `
       <div class="fb-playlist">
-        <p>🎧 ${escapeHtml(note)}</p>
-        <button class="btn btn--sm btn--ghost" type="button" id="fb-playlist">Adicionar à playlist</button>
+        <span class="fb-playlist__icon">${icon('headphones')}</span>
+        <p>${escapeHtml(note)}</p>
+        <button class="btn btn--sm btn--soft" type="button" id="fb-playlist">${icon('list-plus')}<span class="fb-playlist__label">Adicionar à playlist</span></button>
       </div>`;
   }
   if (result.recording) {
     return `
       <div class="fb-playlist fb-playlist--muted">
+        <span class="fb-playlist__icon">${icon('headphones')}</span>
         <p>Sua gravação aprovada anterior continua nas playlists.</p>
       </div>`;
   }
@@ -296,9 +340,12 @@ function wirePlaylist(result) {
       onSaved: (playlists) => {
         const button = $('fb-playlist');
         if (!button) return;
-        button.textContent = playlists.length
+        // Troca só o rótulo: o ícone (e o texto exato do botão) continuam
+        const label = button.querySelector('.fb-playlist__label') || button;
+        label.textContent = playlists.length
           ? `Em ${playlists.length} playlist${playlists.length > 1 ? 's' : ''} ✓`
           : 'Adicionar à playlist';
+        button.classList.toggle('is-saved', playlists.length > 0);
       },
     });
   });
@@ -316,11 +363,11 @@ function buildActions(result) {
     buttons.push(nextButton('Próxima frase'));
   } else if (result.advanced) {
     buttons.push(nextButton('Próxima frase'));
-    buttons.push('<button class="btn btn--ghost" type="button" id="fb-retry">Tentar o 10</button>');
+    buttons.push(`<button class="btn btn--ghost" type="button" id="fb-retry">${icon('target')}Tentar o 10</button>`);
   } else {
-    buttons.push('<button class="btn" type="button" id="fb-retry">Tentar novamente</button>');
+    buttons.push(`<button class="btn" type="button" id="fb-retry">${icon('rotate-ccw')}Tentar novamente</button>`);
     if (result.attempts_count >= 8) {
-      buttons.push('<button class="btn btn--ghost" type="button" id="fb-skip">Pular por agora</button>');
+      buttons.push(`<button class="btn btn--ghost" type="button" id="fb-skip">${icon('skip-forward')}Pular por agora</button>`);
     }
   }
 
@@ -328,7 +375,7 @@ function buildActions(result) {
 }
 
 function nextButton(label) {
-  return `<button class="btn" type="button" id="fb-next">${label}</button>`;
+  return `<button class="btn" type="button" id="fb-next">${label}${icon('arrow-right')}</button>`;
 }
 
 function wireActions(result) {

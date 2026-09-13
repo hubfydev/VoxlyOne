@@ -1,0 +1,228 @@
+/* VoxlyOne — páginas legais (Privacidade e Termos)
+ *
+ * Só apresentação: largura de leitura, índice recolhível, seções numeradas.
+ * O texto jurídico mora no PHP e não depende de nada daqui.
+ */
+
+.legal {
+  max-width: 68ch;
+  margin: 0 auto;
+  counter-reset: legal;
+}
+
+/* marca no topo quando a página é aberta sem login (sem barra superior) */
+.legal__brand { margin-bottom: var(--space-5); }
+
+/* --- cabeçalho --------------------------------------------------------------- */
+
+.legal__head {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--gradient-soft);
+  border: 1px solid var(--border);
+}
+
+.legal__head::after {
+  content: "";
+  position: absolute;
+  top: -80px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--brand) 20%, transparent), transparent);
+  pointer-events: none;
+}
+
+.legal__icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--space-1);
+  border-radius: 15px;
+  background: var(--gradient-brand);
+  color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(91, 71, 232, .7);
+}
+
+.legal__icon .icon { width: 24px; height: 24px; }
+
+.legal h1 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  letter-spacing: -.025em;
+}
+
+.legal__date {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: var(--text-sm);
+}
+
+.legal__date .icon { display: inline-block; width: 16px; height: 16px; margin-right: 4px; vertical-align: -3px; }
+
+/* --- índice ---------------------------------------------------------------------- */
+
+.legal__toc {
+  margin-bottom: var(--space-6);
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.legal__toc summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 52px;
+  padding: 0 var(--space);
+  font-size: var(--text-md);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--radius);
+}
+
+.legal__toc summary::-webkit-details-marker { display: none; }
+.legal__toc summary > span { flex: 1; }
+.legal__toc summary .icon { color: var(--fg-subtle); }
+
+.legal__toc-chevron { transition: transform var(--duration) var(--ease); }
+.legal__toc details[open] .legal__toc-chevron { transform: rotate(180deg); }
+
+.legal__toc ol {
+  margin: 0;
+  padding: 0 var(--space-2) var(--space-2);
+  list-style: none;
+  counter-reset: toc;
+  border-top: 1px solid var(--border);
+}
+
+.legal__toc li { counter-increment: toc; }
+
+.legal__toc a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  padding: 6px var(--space-2);
+  border-radius: var(--radius-xs);
+  color: var(--fg);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.legal__toc a::before {
+  content: counter(toc, decimal-leading-zero);
+  color: var(--brand);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (hover: hover) {
+  .legal__toc a:hover { background: var(--surface-2); }
+}
+
+/* --- seções ----------------------------------------------------------------------- */
+
+.legal__section {
+  counter-increment: legal;
+  padding: var(--space-6) 0;
+  border-top: 1px solid var(--border);
+  /* a âncora não fica escondida sob a barra superior fixa */
+  scroll-margin-top: calc(var(--topbar-h) + var(--space));
+}
+
+.legal__section:first-of-type { border-top: 0; padding-top: var(--space-2); }
+
+.legal h2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  letter-spacing: -.015em;
+}
+
+.legal h2::before {
+  content: counter(legal, decimal-leading-zero);
+  flex: none;
+  color: var(--brand);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.legal p,
+.legal li {
+  color: var(--fg-muted);
+  font-size: var(--text-md);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.legal p { margin: 0 0 var(--space-3); }
+.legal p:last-child { margin-bottom: 0; }
+
+.legal strong { color: var(--fg); font-weight: 700; }
+
+.legal__section a { font-weight: 600; }
+
+.legal ul {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.legal ul:last-child { margin-bottom: 0; }
+
+.legal ul li {
+  position: relative;
+  padding-left: 22px;
+}
+
+/* marcador próprio na cor da marca */
+.legal ul li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: .72em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+/* seção central de cada documento ganha um cartão de destaque */
+.legal__section--key {
+  margin: var(--space-3) 0;
+  padding: var(--space-5) var(--space);
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--border));
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.legal__section--key + .legal__section { border-top: 0; }
+
+/* --- telas maiores --------------------------------------------------------------------- */
+
+@media (min-width: 768px) {
+  .legal__head { padding: var(--space-8); }
+  .legal h1 { font-size: 34px; }
+  .legal__section--key { padding: var(--space-6); }
+}

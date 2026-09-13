@@ -35,8 +35,29 @@ function togglePhraseLang(button) {
   const showingPt = !pt.hidden;
   pt.hidden = showingPt;
   en.hidden = !showingPt;
-  button.textContent = showingPt ? 'Ver PT' : 'Ver EN';
+
+  // Botão só com ícone: o estado vai no aria-pressed e no rótulo acessível
+  const label = showingPt ? 'Ver em português' : 'Ver em inglês';
+  button.setAttribute('aria-pressed', String(!showingPt));
+  button.setAttribute('aria-label', label);
+  button.title = label;
 }
+
+// --- filtros -----------------------------------------------------------------
+
+const filtersForm = document.getElementById('filters');
+const filtersToggle = document.getElementById('filters-toggle');
+const filtersPanel = document.getElementById('filters-panel');
+
+filtersToggle?.addEventListener('click', () => {
+  filtersPanel.hidden = !filtersPanel.hidden;
+  filtersToggle.setAttribute('aria-expanded', String(!filtersPanel.hidden));
+});
+
+// Trocar um filtro já aplica: no celular, um toque a menos
+filtersPanel?.querySelectorAll('select').forEach((select) => {
+  select.addEventListener('change', () => filtersForm.requestSubmit());
+});
 
 async function deletePhrase(button) {
   const id = button.dataset.delete;

@@ -132,7 +132,7 @@ irmã de `public_html`:
 │   └── includes/
 │       ├── bootstrap.php  auth.php  db.php  csrf.php  phrases.php
 │       ├── rate_limit.php  openai.php  header.php  footer.php
-│       └── recordings.php  playlists.php
+│       └── recordings.php  playlists.php  icons.php
 └── public_html/               # ← document root do hubfy.app
     └── voxly/                 # ← document root do voxly.hubfy.app
         ├── index.php  dashboard.php  phrase_form.php  practice.php
@@ -140,9 +140,10 @@ irmã de `public_html`:
         ├── playlists.php  playlist.php  recording.php
         ├── auth/{login,callback,logout}.php
         ├── api/{analyze,translate,phrases,playlists,consent,delete_account,health}.php
-        ├── assets/css/app.css
+        ├── assets/css/app.css  picker.css  pages/*.css
+        ├── assets/fonts/plus-jakarta-sans.woff2  OFL.txt
         ├── assets/js/{recorder,player,practice,...}.js
-        ├── assets/js/{playlist_picker,playlist_queue,playlist_player,playlists}.js
+        ├── assets/js/{playlist_picker,playlist_queue,playlist_player,playlists,icons}.js
         └── .htaccess
 ```
 
@@ -169,6 +170,26 @@ gravações sai pelo `recording.php` na raiz (GET, sem efeito colateral, não é
 Migrations incrementais ficam em `db/migrations/` e rodam ANTES de subir o código.
 Nada de PUT/DELETE: em hospedagem compartilhada o corpo não chega em `$_POST` e
 WAFs bloqueiam. CRUD via `action=create|update|delete`.
+
+## Interface (redesenho de 13/09/2026)
+
+- **Design system em `assets/css/app.css`**: tokens de cor, espaço, raio e sombra, com
+  tema escuro automático (`prefers-color-scheme`). **Toda cor vem de token**; o tema
+  escuro troca só os tokens. Componentes: `.btn` (+ `--sm --lg --block --ghost --soft
+  --danger --icon`), `.card`, `.badge--*`, `.speeds/.speed` (segmentado), `.field`,
+  `.empty`, `.modal` (folha inferior no celular).
+- **CSS por tela** em `assets/css/pages/{nome}.css`, declarado na página com
+  `$pageStyles = ['nome'];` antes do header. `picker.css` carrega em toda tela logada.
+- **Navegação**: barra superior (marca + avatar) e **barra de abas inferior** fixa
+  (Frases, Playlists, Praticar em destaque, Conquistas, Perfil). Com abas, o rodapé
+  legal some — Privacidade e Termos ficam no Perfil.
+- **Ícones**: Lucide inline, sem CDN — `icon('nome')` em PHP (`includes/icons.php`) e
+  `icon('nome')` em JS (`assets/js/icons.js`). Botão só com ícone exige `aria-label`.
+- **Fonte**: Plus Jakarta Sans auto-hospedada em `assets/fonts/` (OFL).
+- **Cache**: CSS e JS entram com `asset('/assets/...')`, que acrescenta `?v=mtime` —
+  cada deploy invalida só o que mudou.
+- Alvos de toque ≥ 44px, inputs com 16px (evita zoom do iOS), nada de rolagem
+  horizontal em 360px, `prefers-reduced-motion` respeitado.
 
 ## Checklist antes de cada commit
 

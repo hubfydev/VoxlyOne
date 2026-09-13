@@ -12,6 +12,14 @@ toggle.addEventListener('click', () => {
   if (!form.hidden) nameField.focus();
 });
 
+// Atalho do estado vazio: abre o mesmo formulário do cabeçalho
+document.querySelectorAll('[data-new-playlist]').forEach((button) => {
+  button.addEventListener('click', () => {
+    if (form.hidden) toggle.click();
+    else nameField.focus();
+  });
+});
+
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   errorBox.hidden = true;

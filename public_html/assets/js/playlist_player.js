@@ -5,6 +5,7 @@
  */
 
 import { PlaybackQueue } from './playlist_queue.js';
+import { icon } from './icons.js';
 
 const data = window.PLAYLIST;
 const $ = (id) => document.getElementById(id);
@@ -335,8 +336,10 @@ function render() {
   els.nowPt.hidden = !shown?.text_pt;
   if (currentId === null) els.progress.style.transform = 'scaleX(0)';
 
-  els.play.textContent = playing ? '⏸ Pausar' : '▶ Tocar';
+  // O botão já tem os dois ícones; a classe decide qual aparece (e anima a onda da capa)
   els.play.setAttribute('aria-label', playing ? 'Pausar' : 'Tocar');
+  document.querySelector('.pl-player').classList.toggle('is-playing', playing);
+  els.list.classList.toggle('is-playing', playing);
 
   setPressed(els.shuffle, queue.shuffle);
   setPressed(els.repeat, queue.repeat);
@@ -373,20 +376,33 @@ function renderList(currentId) {
           <span class="pl-item__en"></span>
           <span class="pl-item__pt"></span>
         </span>
-        <span class="pl-item__score"></span>
       </button>
-      <div class="pl-item__tools">
-        <button class="btn btn--sm btn--ghost" type="button" data-move="-1" aria-label="Mover para cima">↑</button>
-        <button class="btn btn--sm btn--ghost" type="button" data-move="1" aria-label="Mover para baixo">↓</button>
-        <button class="btn btn--sm btn--danger" type="button" data-remove aria-label="Remover da playlist">✕</button>
+      <div class="pl-item__foot">
+        <span class="pl-item__score" title="Nota da gravação">${icon('star')}<span></span></span>
+        <span class="pl-item__time"></span>
+        <div class="pl-item__tools">
+          <button class="pl-tool" type="button" data-move="-1" aria-label="Mover para cima">${icon('chevron-up')}</button>
+          <button class="pl-tool" type="button" data-move="1" aria-label="Mover para baixo">${icon('chevron-down')}</button>
+          <button class="pl-tool pl-tool--danger" type="button" data-remove aria-label="Remover da playlist">${icon('trash-2')}</button>
+        </div>
       </div>`;
 
-    li.querySelector('.pl-item__num').textContent = item.item_id === currentId ? '♪' : String(index + 1);
+    const num = li.querySelector('.pl-item__num');
+    if (item.item_id === currentId) {
+      // Faixa atual: equalizador no lugar do número (anima só enquanto toca)
+      num.innerHTML = '<span class="pl-eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="sr-only">Faixa atual</span>';
+    } else {
+      num.textContent = String(index + 1);
+    }
     li.querySelector('.pl-item__en').textContent = item.text_en;
     const pt = li.querySelector('.pl-item__pt');
     pt.textContent = item.text_pt || '';
     pt.hidden = !item.text_pt;
-    li.querySelector('.pl-item__score').textContent = Number(item.score).toFixed(1).replace('.', ',');
+    li.querySelector('.pl-item__score span').textContent = Number(item.score).toFixed(1).replace('.', ',');
+    const time = li.querySelector('.pl-item__time');
+    const seconds = Number(item.audio_seconds) || 0;
+    time.textContent = seconds > 0 ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}` : '';
+    time.hidden = seconds <= 0;
     li.querySelector('[data-move="-1"]').disabled = index === 0;
     li.querySelector('[data-move="1"]').disabled = index === items.length - 1;
 

@@ -23,6 +23,7 @@ date_default_timezone_set(defined('APP_TIMEZONE') ? APP_TIMEZONE : 'America/New_
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/icons.php';
 
 start_app_session();
 
@@ -77,6 +78,19 @@ function format_date(?string $datetime): string
 function e(?string $value): string
 {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * URL de um arquivo estático com a data de modificação como versão (?v=).
+ * Cada deploy muda a URL do que foi alterado, e o navegador não fica preso a um
+ * CSS ou JS antigo — o cache pode durar à vontade sem risco de misturar versões.
+ */
+function asset(string $path): string
+{
+    $file = rtrim((string)($_SERVER['DOCUMENT_ROOT'] ?? ''), '/') . $path;
+    $mtime = is_file($file) ? filemtime($file) : false;
+
+    return $mtime === false ? $path : $path . '?v=' . $mtime;
 }
 
 /** Redireciona e encerra. */
