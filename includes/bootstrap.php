@@ -93,6 +93,27 @@ function asset(string $path): string
     return $mtime === false ? $path : $path . '?v=' . $mtime;
 }
 
+/**
+ * Import map que versiona TODO módulo JS, inclusive os importados por outros.
+ *
+ * O asset() só versiona o <script src> principal. Um `import './player.js'` dentro
+ * dele pedia /assets/js/player.js sem ?v=, e com o cache de 7 dias da hospedagem o
+ * celular seguia usando o player.js antigo depois do deploy: o import de uma
+ * função nova falhava e o módulo inteiro parava (botões da prática sem resposta).
+ * O import map faz o navegador trocar cada URL pela versão com ?v=mtime.
+ */
+function asset_import_map(): string
+{
+    $dir = rtrim((string)($_SERVER['DOCUMENT_ROOT'] ?? ''), '/') . '/assets/js';
+    $imports = [];
+    foreach ((array)glob($dir . '/*.js') as $file) {
+        $path = '/assets/js/' . basename((string)$file);
+        $imports[$path] = asset($path);
+    }
+
+    return json_encode(['imports' => $imports], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG);
+}
+
 /** Redireciona e encerra. */
 function redirect(string $path): never
 {

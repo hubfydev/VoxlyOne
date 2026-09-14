@@ -187,7 +187,11 @@ WAFs bloqueiam. CRUD via `action=create|update|delete`.
   `icon('nome')` em JS (`assets/js/icons.js`). Botão só com ícone exige `aria-label`.
 - **Fonte**: Plus Jakarta Sans auto-hospedada em `assets/fonts/` (OFL).
 - **Cache**: CSS e JS entram com `asset('/assets/...')`, que acrescenta `?v=mtime` —
-  cada deploy invalida só o que mudou.
+  cada deploy invalida só o que mudou. Os **imports entre módulos** (`import './x.js'`)
+  são versionados pelo import map que o header gera (`asset_import_map()`), e o
+  `.htaccess` manda `Cache-Control: no-cache` nos `.js`. Sem isso, a hospedagem cacheia
+  JS por 7 dias e o celular mistura módulo novo com import antigo: o módulo inteiro
+  para e os botões não respondem (aconteceu na prática em 14/09/2026).
 - Alvos de toque ≥ 44px, inputs com 16px (evita zoom do iOS), nada de rolagem
   horizontal em 360px, `prefers-reduced-motion` respeitado.
 

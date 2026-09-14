@@ -55,6 +55,7 @@ $favicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox
 <title><?= e($pageTitle) ?></title>
 <link rel="icon" href="<?= $favicon ?>">
 <link rel="preload" href="/assets/fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
+<script type="importmap"><?= asset_import_map() ?></script>
 <link rel="stylesheet" href="<?= e(asset('/assets/css/app.css')) ?>">
 <?php if ($showNav): ?>
 <link rel="stylesheet" href="<?= e(asset('/assets/css/picker.css')) ?>">

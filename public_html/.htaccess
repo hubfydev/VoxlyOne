@@ -10,6 +10,13 @@ Header set X-Content-Type-Options "nosniff"
 Header set X-Frame-Options "DENY"
 Header set Referrer-Policy "strict-origin-when-cross-origin"
 
+# JavaScript: o navegador sempre confere com o servidor antes de usar a cópia em
+# cache (resposta 304 barata quando nada mudou). Sem isto, o cache de 7 dias da
+# hospedagem mantinha módulos antigos no celular depois do deploy.
+<FilesMatch "\.js$">
+  Header set Cache-Control "no-cache"
+</FilesMatch>
+
 # Bloquear utilitários prefixados com _ (ex: o _spike.php do Dia 1)
 <FilesMatch "^_">
   Require all denied
