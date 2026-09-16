@@ -24,11 +24,22 @@ function current_user(): ?array
         return null;
     }
 
-    $stmt = db()->prepare(
-        'SELECT id, google_id, email, name, avatar_url, consented_at, consent_version, created_at
-           FROM users WHERE id = ?'
-    );
-    $stmt->execute([$id]);
+    try {
+        $stmt = db()->prepare(
+            'SELECT id, google_id, email, name, avatar_url, consented_at, consent_version,
+                    blocked_at, created_at
+               FROM users WHERE id = ?'
+        );
+        $stmt->execute([$id]);
+    } catch (PDOException $ex) {
+        // Código novo no ar antes da migration do painel: segue sem o bloqueio
+        error_log('current_user sem blocked_at (rodar migration do painel): ' . $ex->getMessage());
+        $stmt = db()->prepare(
+            'SELECT id, google_id, email, name, avatar_url, consented_at, consent_version, created_at
+               FROM users WHERE id = ?'
+        );
+        $stmt->execute([$id]);
+    }
     $row = $stmt->fetch();
 
     // Sessão apontando para usuário que não existe mais (conta excluída)
@@ -37,8 +48,46 @@ function current_user(): ?array
         return null;
     }
 
+    // Conta bloqueada pelo painel: derruba a sessão na próxima requisição
+    if (!empty($row['blocked_at'])) {
+        unset($_SESSION['user_id']);
+        $_SESSION['blocked_notice'] = true;
+        return null;
+    }
+
     $user = $row;
     return $user;
+}
+
+/** A sessão acabou de ser encerrada por bloqueio da conta? */
+function session_was_blocked(): bool
+{
+    return !empty($_SESSION['blocked_notice']);
+}
+
+/** Registra o login bem-sucedido. Nunca derruba o login. */
+function record_user_login(int $userId): void
+{
+    try {
+        $stmt = db()->prepare(
+            'UPDATE users SET last_login_at = NOW(), login_count = login_count + 1 WHERE id = ?'
+        );
+        $stmt->execute([$userId]);
+    } catch (PDOException $ex) {
+        error_log('record_user_login: ' . $ex->getMessage());
+    }
+}
+
+/** A conta está bloqueada? (usada no login, antes de abrir a sessão) */
+function is_user_blocked(int $userId): bool
+{
+    try {
+        $stmt = db()->prepare('SELECT blocked_at IS NOT NULL FROM users WHERE id = ?');
+        $stmt->execute([$userId]);
+        return (bool)$stmt->fetchColumn();
+    } catch (PDOException $ex) {
+        return false;
+    }
 }
 
 /** O usuário aceitou o texto de consentimento ATUAL? */
@@ -61,6 +110,9 @@ function require_auth(): array
 function require_auth_api(): array
 {
     $user = current_user();
+    if ($user === null && session_was_blocked()) {
+        json_error('blocked', 'Sua conta está bloqueada. Fale com us@hubfy.us.', 403);
+    }
     if ($user === null) {
         json_error('unauthorized', 'Faça login para continuar.', 401);
     }

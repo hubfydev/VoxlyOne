@@ -114,6 +114,25 @@ function call_text_model(string $textPt, string $textEn): array
     ];
 }
 
+/**
+ * Guarda o `usage` da última resposta paga desta requisição, para o registro de
+ * custos (ai_usage.php) ler depois — inclusive quando o JSON do modelo vem
+ * inválido e a análise falha, já que a OpenAI cobra do mesmo jeito.
+ */
+function openai_remember_usage(?array $usage): void
+{
+    $GLOBALS['openai_last_usage'] = $usage;
+}
+
+/** Devolve e limpa o `usage` guardado (null se nenhuma chamada paga aconteceu). */
+function openai_take_last_usage(): ?array
+{
+    $usage = $GLOBALS['openai_last_usage'] ?? null;
+    $GLOBALS['openai_last_usage'] = null;
+
+    return is_array($usage) ? $usage : null;
+}
+
 /** POST em /v1/chat/completions. Lança OpenAiException em qualquer falha. */
 function openai_post(array $payload, int $timeout): array
 {
@@ -150,6 +169,8 @@ function openai_post(array $payload, int $timeout): array
         throw new OpenAiException('Resposta da OpenAI não é JSON.');
     }
 
+    openai_remember_usage(is_array($decoded['usage'] ?? null) ? $decoded['usage'] : null);
+
     return $decoded;
 }
 
@@ -168,4 +189,53 @@ function parse_model_json(string $content): array
     }
 
     return $parsed;
+}
+
+/**
+ * Gera o áudio da pronúncia correta com a voz neural da OpenAI (/v1/audio/speech).
+ * Devolve o MP3 binário. Lança OpenAiException em qualquer falha — quem chama
+ * devolve a cota e o navegador cai na voz do aparelho.
+ */
+function call_tts_model(string $text, string $voice, string $instructions): string
+{
+    $payload = [
+        'model'           => tts_model(),
+        'voice'           => $voice,
+        'input'           => $text,
+        'instructions'    => $instructions,
+        'response_format' => 'mp3',
+    ];
+
+    $ch = curl_init('https://api.openai.com/v1/audio/speech');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_TIMEOUT        => 20,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . OPENAI_API_KEY,
+        ],
+        CURLOPT_POSTFIELDS     => json_encode($payload),
+    ]);
+
+    $raw      = curl_exec($ch);
+    $httpCode = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    $curlErr  = curl_error($ch);
+    curl_close($ch);
+
+    if ($raw === false) {
+        throw new OpenAiException('cURL (TTS) falhou: ' . $curlErr);
+    }
+    if ($httpCode !== 200) {
+        $decoded = json_decode((string)$raw, true);
+        $detail  = $decoded['error']['message'] ?? substr((string)$raw, 0, 300);
+        throw new OpenAiException("TTS HTTP {$httpCode}: {$detail}");
+    }
+    // Resposta de áudio minúscula é sinal de erro disfarçado, não de MP3 válido
+    if (strlen((string)$raw) < 512) {
+        throw new OpenAiException('TTS devolveu áudio vazio ou inválido.');
+    }
+
+    return (string)$raw;
 }

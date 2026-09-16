@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../boot.php';
 require_once APP_INCLUDES . '/phrases.php';
 require_once APP_INCLUDES . '/recordings.php';
+require_once APP_INCLUDES . '/tts.php';
 
 require_method('POST');
 $user = require_auth_api();
@@ -147,6 +148,7 @@ function action_delete(array $user): never
     if ($recording !== null) {
         delete_recording_file((int)$user['id'], (string)$recording['file_name']);
     }
+    tts_delete_phrase((int)$user['id'], $id);
 
     json_ok(['id' => $id]);
 }

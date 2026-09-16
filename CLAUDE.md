@@ -109,6 +109,45 @@ sintetizada de referência. Regras:
 texto do modal/privacidade sobre gravações → incrementar, e todos aceitam de novo.
 Usar `has_current_consent($user)`, não `consented_at !== null`.
 
+**Voz de referência neural (15/09/2026)** — "Ouvir pronúncia" usa OpenAI TTS
+(`gpt-4o-mini-tts`, vozes `marin` feminina e `cedar` masculina, com instruções de tom
+suave e caloroso), servida por `public_html/tts.php`:
+- Gerada **uma vez** por frase + voz e guardada em `voxly-app/storage/tts/{user_id}/`.
+  O hash (modelo + voz + instruções + texto) entra no nome do arquivo e na URL (`v=`);
+  editar a frase gera áudio novo e apaga o antigo. Exclusão de frase e de conta apagam
+  os arquivos.
+- Cota diária `tts` com o mesmo padrão do rate limit (incremento antes, devolução em
+  falha); só áudio novo conta, o cache não gasta.
+- **Qualquer falha cai na Web Speech API do aparelho** (comportamento antigo): sem
+  migration, sem cota, OpenAI fora. O JS pré-carrega o áudio ao abrir a prática; se
+  falhar, o toque já vai direto para a voz do aparelho (no iOS ela precisa sair do toque).
+- Velocidade = `playbackRate` (0,75 / 1 / 1,2) com `preservesPitch` — um só áudio por voz.
+- É GET porque o `<audio>` precisa do src direto no toque (iOS); a sessão SameSite=Lax
+  impede disparo por outro site.
+- A tela mostra "Voz gerada por inteligência artificial" (transparência exigida).
+
+**Painel administrativo (15/09/2026)** — `public_html/admin/`, login próprio
+(usuário/senha em `admins`, bcrypt). Regras:
+- Toda página define `ADMIN_AREA` **antes** do boot: sessão separada (cookie
+  `voxlyadmin`, path `/admin`, SameSite=Strict). Painel não dá acesso ao app e
+  vice-versa. Começa com `require_admin()`; todo POST passa por `require_admin_post()`.
+- Força bruta: 5 erros por IP ou 10 por usuário em 15 min travam o login
+  (`admin_logins`, que também alimenta a tela Acessos). Sessão expira com 30 min
+  parado ou 8 h no total. Enquanto `password_changed_at` for NULL, o painel avisa
+  que a senha inicial (`adm123`) está em uso.
+- **Bloqueio de usuário** = `users.blocked_at`. `current_user()` trata bloqueado
+  como deslogado (vale para toda página, API, `recording.php` e `tts.php`); a API
+  responde 403 `blocked`; o callback do Google recusa o login.
+- **Custo de IA** em `ai_usage`, uma linha por chamada paga, com os 4 tipos de token
+  e `cost_usd` calculado na hora com os preços em vigor (editáveis em Custos →
+  Preços, guardados em `app_settings`). `openai_post()` guarda o `usage`;
+  `record_last_chat_usage()` roda no `finally` — chamada paga com resposta inválida
+  também é registrada. A voz (`/v1/audio/speech`) não devolve `usage`: tokens
+  **estimados** pela duração do MP3 (`estimated = 1`).
+- `ai_usage.user_id` vira NULL quando a conta é excluída (custo histórico anônimo).
+- Queries com GROUP BY listam todas as colunas não agregadas (compatível com
+  ONLY_FULL_GROUP_BY do MySQL 8).
+
 **Nunca usar Whisper nem qualquer modelo `*-transcribe`** para transcrever antes de
 avaliar — eles corrigem o sotaque e apagam exatamente o erro que queremos medir.
 
@@ -132,12 +171,14 @@ irmã de `public_html`:
 │   └── includes/
 │       ├── bootstrap.php  auth.php  db.php  csrf.php  phrases.php
 │       ├── rate_limit.php  openai.php  header.php  footer.php
-│       └── recordings.php  playlists.php  icons.php
+│       ├── recordings.php  playlists.php  icons.php  tts.php  audio_file.php
+│       └── ai_usage.php  admin.php  admin_header.php  admin_footer.php
 └── public_html/               # ← document root do hubfy.app
     └── voxly/                 # ← document root do voxly.hubfy.app
         ├── index.php  dashboard.php  phrase_form.php  practice.php
         ├── mastered.php  profile.php  privacy.php  terms.php
-        ├── playlists.php  playlist.php  recording.php
+        ├── playlists.php  playlist.php  recording.php  tts.php
+        ├── admin/{index,dashboard,users,user,user_action,costs,access,account,logout}.php
         ├── auth/{login,callback,logout}.php
         ├── api/{analyze,translate,phrases,playlists,consent,delete_account,health}.php
         ├── assets/css/app.css  picker.css  pages/*.css

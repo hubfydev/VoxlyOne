@@ -30,6 +30,10 @@ start_app_session();
 /**
  * Sessão com cookie httponly + secure + samesite=Lax (RF-01).
  * Os parâmetros precisam ser definidos ANTES do session_start().
+ *
+ * O painel administrativo (páginas que definem ADMIN_AREA antes do boot) usa
+ * uma sessão separada, com cookie próprio restrito a /admin e SameSite=Strict:
+ * entrar no painel não dá acesso ao app, e sair do app não derruba o painel.
  */
 function start_app_session(): void
 {
@@ -37,14 +41,16 @@ function start_app_session(): void
         return;
     }
 
+    $isAdmin = defined('ADMIN_AREA');
+
     session_set_cookie_params([
         'lifetime' => 0,
-        'path'     => '/',
+        'path'     => $isAdmin ? '/admin' : '/',
         'secure'   => true,
         'httponly' => true,
-        'samesite' => 'Lax',
+        'samesite' => $isAdmin ? 'Strict' : 'Lax',
     ]);
-    session_name('voxlyone');
+    session_name($isAdmin ? 'voxlyadmin' : 'voxlyone');
     session_start();
 }
 

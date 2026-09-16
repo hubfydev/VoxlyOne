@@ -25,9 +25,18 @@ define('OPENAI_AUDIO_MODEL', 'gpt-audio-1.5');
 // Modelo de texto para tradução + geração da fonética aproximada
 define('OPENAI_TEXT_MODEL', 'gpt-4o-mini');
 
+// Voz neural do botão "Ouvir pronúncia" (OpenAI TTS). Cada frase é gerada uma vez
+// por voz e fica em cache (~US$ 0,001 por frase). marin e cedar são as vozes
+// recomendadas pela OpenAI para qualidade; outras: coral, sage, shimmer, nova, ash, verse.
+// Sem estas constantes o app usa estes mesmos padrões.
+define('OPENAI_TTS_MODEL', 'gpt-4o-mini-tts');
+define('TTS_VOICE_FEMALE', 'marin');
+define('TTS_VOICE_MALE',   'cedar');
+
 // Limites diários por usuário
 define('LIMIT_ANALYZE_PER_DAY',   30);
 define('LIMIT_TRANSLATE_PER_DAY', 50);
+define('LIMIT_TTS_PER_DAY',       100);   // só conta áudio novo; o cache não gasta
 
 // Botão de emergência: teto global de análises/dia somando TODOS os usuários.
 // Com o custo medido (~US$ 0,004/análise), 300 ≈ US$ 1,17/dia no pior caso.

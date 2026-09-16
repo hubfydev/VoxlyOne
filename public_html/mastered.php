@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/boot.php';
 require_once APP_INCLUDES . '/phrases.php';
+require_once APP_INCLUDES . '/tts.php';
 
 $user   = require_auth();
 $userId = (int)$user['id'];
@@ -93,7 +94,9 @@ require APP_INCLUDES . '/header.php';
 
         <div class="trophy__actions">
           <button class="btn btn--sm trophy__play" type="button"
-                  data-play="<?= e($phrase['text_en']) ?>"><?= icon('volume-2') ?>Ouvir</button>
+                  data-play="<?= e($phrase['text_en']) ?>"
+                  data-tts-female="<?= e(tts_url($phrase, 'female')) ?>"
+                  data-tts-male="<?= e(tts_url($phrase, 'male')) ?>"><?= icon('volume-2') ?>Ouvir</button>
           <a class="btn btn--sm btn--ghost" href="/practice.php?id=<?= (int)$phrase['id'] ?>"><?= icon('rotate-ccw') ?>Praticar</a>
         </div>
       </li>

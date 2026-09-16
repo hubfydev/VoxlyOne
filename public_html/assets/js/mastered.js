@@ -30,8 +30,11 @@ document.addEventListener('click', (event) => {
   if (!button) return;
 
   button.disabled = true;
+  const voice = currentVoice();
   speak(button.dataset.play, speed, {
-    voice: currentVoice(),
+    voice,
+    // Voz neural por frase e gênero (data-tts-female / data-tts-male)
+    audioUrl: voice === 'male' ? button.dataset.ttsMale : button.dataset.ttsFemale,
     onEnd: () => { button.disabled = false; },
   });
 });

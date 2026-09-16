@@ -11,7 +11,13 @@ CREATE TABLE users (
   -- plan (free/premium): adicionar na Fase 2, quando premium existir
   consented_at DATETIME NULL,          -- consentimento de gravação (RF-12)
   consent_version TINYINT UNSIGNED NOT NULL DEFAULT 0, -- texto aceito; ver CONSENT_VERSION
-  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  blocked_at     DATETIME NULL,        -- bloqueado pelo painel administrativo
+  blocked_reason VARCHAR(200) NULL,
+  last_login_at  DATETIME NULL,
+  login_count    INT UNSIGNED NOT NULL DEFAULT 0,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_blocked (blocked_at),
+  KEY idx_last_login (last_login_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE categories (
@@ -63,7 +69,7 @@ CREATE TABLE attempts (
 
 CREATE TABLE rate_limits (
   user_id INT UNSIGNED NOT NULL,
-  action  ENUM('analyze','translate') NOT NULL,
+  action  ENUM('analyze','translate','tts') NOT NULL,
   day     DATE NOT NULL,
   count   INT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (user_id, action, day),
@@ -119,3 +125,61 @@ CREATE TABLE playlist_items (
   FOREIGN KEY (playlist_id)  REFERENCES playlists(id)  ON DELETE CASCADE,
   FOREIGN KEY (recording_id) REFERENCES recordings(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Administradores do painel. Senha inicial "adm123" (hash bcrypt abaixo):
+-- o painel exibe um aviso até ela ser trocada.
+CREATE TABLE admins (
+  id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  username            VARCHAR(60)  NOT NULL UNIQUE,
+  password_hash       VARCHAR(255) NOT NULL,
+  password_changed_at DATETIME NULL,      -- NULL = ainda com a senha inicial
+  last_login_at       DATETIME NULL,
+  created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO admins (username, password_hash)
+VALUES ('Adm', '$2y$12$iNDlwNH2j6xoZ4lux6dnOeS4fzo.y7mD5v5LKebbttoHbIfLEEwpC');
+
+-- Tentativas de login no painel: trava força bruta e alimenta a tela de Acessos
+CREATE TABLE admin_logins (
+  id             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  admin_id       INT UNSIGNED NULL,
+  username_tried VARCHAR(60)  NOT NULL,
+  ip             VARCHAR(45)  NOT NULL,
+  user_agent     VARCHAR(255) NULL,
+  success        TINYINT(1)   NOT NULL,
+  created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_ip_time (ip, created_at),
+  KEY idx_user_time (username_tried, created_at),
+  KEY idx_time (created_at),
+  FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Uso da IA por chamada: tokens e custo calculado no momento da chamada.
+-- user_id vira NULL se a conta for excluída — o custo histórico fica, anônimo.
+CREATE TABLE ai_usage (
+  id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id             INT UNSIGNED NULL,
+  action              ENUM('analyze','translate','tts') NOT NULL,
+  model               VARCHAR(60) NOT NULL,
+  text_input_tokens   INT UNSIGNED NOT NULL DEFAULT 0,
+  audio_input_tokens  INT UNSIGNED NOT NULL DEFAULT 0,
+  text_output_tokens  INT UNSIGNED NOT NULL DEFAULT 0,
+  audio_output_tokens INT UNSIGNED NOT NULL DEFAULT 0,
+  cost_usd            DECIMAL(12,6) NOT NULL DEFAULT 0,
+  estimated           TINYINT(1) NOT NULL DEFAULT 0,  -- 1 = tokens estimados (TTS não devolve uso)
+  created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_user_time (user_id, created_at),
+  KEY idx_action_time (action, created_at),
+  KEY idx_time (created_at),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Configurações editáveis pelo painel (preços por modelo, início do monitoramento)
+CREATE TABLE app_settings (
+  name       VARCHAR(80)  NOT NULL PRIMARY KEY,
+  value      TEXT         NOT NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO app_settings (name, value) VALUES ('usage_tracking_since', NOW());

@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../boot.php';
 require_once APP_INCLUDES . '/rate_limit.php';
 require_once APP_INCLUDES . '/openai.php';
+require_once APP_INCLUDES . '/ai_usage.php';
 
 require_method('POST');
 $user = require_auth_api();
@@ -46,6 +47,8 @@ try {
     if ($charged) {
         rate_limit_refund($userId, 'translate');
     }
+    // Custo da IA por usuário (painel administrativo). Nunca lança.
+    record_last_chat_usage($userId, 'translate', OPENAI_TEXT_MODEL);
 }
 
 if ($failure !== null) {

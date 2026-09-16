@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../boot.php';
 require_once APP_INCLUDES . '/recordings.php';
+require_once APP_INCLUDES . '/tts.php';
 
 require_method('POST');
 $user = require_auth_api();
@@ -20,6 +21,7 @@ $stmt->execute([$user['id']]);
 
 // Os arquivos de áudio não estão no banco: apaga a pasta do usuário
 delete_user_recordings((int)$user['id']);
+tts_delete_user((int)$user['id']);
 
 // Derruba a sessão antes de responder
 $_SESSION = [];

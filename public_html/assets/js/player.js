@@ -1,7 +1,21 @@
-/* Reprodução da frase em inglês com a Web Speech API (RF-06). Custo zero.
-   Voz feminina ou masculina à escolha do usuário. */
+/* Reprodução da frase em inglês (RF-06), voz feminina ou masculina.
+ *
+ * Primeiro tenta a voz neural gerada no servidor (tts.php, OpenAI TTS) — suave e
+ * natural, igual em qualquer aparelho. Se ela falhar (sem cota, sem rede, config
+ * ausente), cai na Web Speech API do próprio aparelho, que é como sempre foi.
+ */
 
 const RATES = { slow: 0.6, normal: 0.9, fast: 1.2 };
+
+// A voz neural já sai num ritmo natural: "normal" é a velocidade original do áudio
+const AUDIO_RATES = { slow: 0.75, normal: 1, fast: 1.2 };
+
+// Espera máxima pelo início do áudio neural (a 1ª geração leva ~1–3s)
+const AUDIO_START_TIMEOUT = 12000;
+
+const failedAudio = new Set();
+let referenceAudio = null;
+let stopCurrentAudio = null;
 
 const VOICE_STORAGE_KEY = 'voxly.voice';
 
@@ -134,13 +148,123 @@ export function bindVoiceButtons(buttons, onChange) {
 }
 
 /**
+ * Aquece o áudio neural em segundo plano: gera no servidor (se ainda não existir)
+ * e deixa no cache do navegador, para o toque em "Ouvir" tocar na hora.
+ * Se falhar, marca a URL e o próximo toque já usa a voz do aparelho direto —
+ * no iOS isso importa, porque a voz do aparelho precisa sair do próprio toque.
+ */
+export function preloadReference(audioUrl) {
+  if (!audioUrl || failedAudio.has(audioUrl)) return;
+  fetch(audioUrl, { credentials: 'same-origin' })
+    .then((res) => {
+      if (!res.ok || !(res.headers.get('content-type') || '').startsWith('audio/')) failedAudio.add(audioUrl);
+    })
+    .catch(() => failedAudio.add(audioUrl));
+}
+
+/**
  * Fala a frase e avisa quando o play começou.
+ *
+ * Com `audioUrl`, toca a voz neural; sem ela (ou se ela falhar), usa a voz do
+ * aparelho. Os callbacks são os mesmos nos dois caminhos.
+ */
+export function speak(text, speed, { onStart, onEnd, voice: gender, audioUrl } = {}) {
+  stopCurrentAudio?.();
+
+  if (audioUrl && !failedAudio.has(audioUrl)) {
+    playNeural(audioUrl, speed, {
+      onStart,
+      onEnd,
+      onFail: () => {
+        failedAudio.add(audioUrl);
+        speakWithDevice(text, speed, { onStart, onEnd, voice: gender });
+      },
+    });
+    return;
+  }
+
+  speakWithDevice(text, speed, { onStart, onEnd, voice: gender });
+}
+
+/** Voz neural num único <audio> reaproveitado (o iOS libera o elemento no 1º toque). */
+function playNeural(audioUrl, speed, { onStart, onEnd, onFail }) {
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+
+  referenceAudio ??= new Audio();
+  const audio = referenceAudio;
+  const rate = AUDIO_RATES[speed] ?? AUDIO_RATES.normal;
+
+  let settled = false;
+  let started = false;
+  let startTimer = null;
+  const controller = new AbortController();
+  const cleanup = () => {
+    controller.abort();
+    clearTimeout(startTimer);
+    if (stopCurrentAudio === stop) stopCurrentAudio = null;
+  };
+  const finish = () => {
+    if (settled) return;
+    settled = true;
+    cleanup();
+    onEnd?.();
+  };
+  const fail = () => {
+    if (settled) return;
+    settled = true;
+    cleanup();
+    audio.pause();
+    onFail();
+  };
+  const stop = () => {
+    audio.pause();
+    finish();
+  };
+  stopCurrentAudio = stop;
+
+  const on = (type, handler) => audio.addEventListener(type, handler, { signal: controller.signal });
+  on('playing', () => {
+    if (started) return;
+    started = true;
+    clearTimeout(startTimer);
+    onStart?.();
+  });
+  on('ended', finish);
+  // Erro antes de começar: a voz do aparelho assume. Depois de começar: só encerra.
+  on('error', () => (started ? finish() : fail()));
+
+  // Geração travada ou rede lenta: não deixa o usuário esperando em silêncio
+  startTimer = setTimeout(() => (started ? null : fail()), AUDIO_START_TIMEOUT);
+
+  const absolute = new URL(audioUrl, window.location.href).href;
+  if (audio.src !== absolute) {
+    audio.src = audioUrl;
+  } else {
+    audio.currentTime = 0;
+  }
+
+  // Velocidade sem mudar o tom da voz
+  audio.preservesPitch = true;
+  audio.webkitPreservesPitch = true;
+  audio.defaultPlaybackRate = rate;
+  audio.playbackRate = rate;
+
+  const playing = audio.play();
+  playing?.catch((error) => {
+    // Autoplay bloqueado não é defeito do áudio: só libera o botão de novo
+    if (error?.name === 'NotAllowedError') finish();
+    else if (error?.name !== 'AbortError') fail();
+  });
+}
+
+/**
+ * Voz do aparelho (Web Speech API).
  *
  * O onEnd é entregue por evento OU por timer de fallback — no Safari iOS o
  * evento 'end' frequentemente não dispara, e sem o fallback o botão GRAVAR
  * nunca habilitaria, travando o app justamente no público-alvo mobile (RF-06).
  */
-export function speak(text, speed, { onStart, onEnd, voice: gender } = {}) {
+function speakWithDevice(text, speed, { onStart, onEnd, voice: gender } = {}) {
   if (!('speechSynthesis' in window)) {
     onStart?.();
     onEnd?.();

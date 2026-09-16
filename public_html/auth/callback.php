@@ -98,8 +98,16 @@ try {
     login_failed('upsert falhou: ' . $ex->getMessage());
 }
 
+// Conta bloqueada pelo painel administrativo: não abre sessão
+if (is_user_blocked($userId)) {
+    error_log('OAuth callback: login recusado, conta bloqueada (usuário ' . $userId . ')');
+    redirect('/index.php?erro=bloqueado');
+}
+
 // Regenerar o id da sessão no login evita fixação de sessão
 session_regenerate_id(true);
 $_SESSION['user_id'] = $userId;
+unset($_SESSION['blocked_notice']);
+record_user_login($userId);
 
 redirect('/dashboard.php');

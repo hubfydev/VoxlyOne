@@ -6,6 +6,7 @@ require_once APP_INCLUDES . '/phrases.php';
 require_once APP_INCLUDES . '/rate_limit.php';
 require_once APP_INCLUDES . '/openai.php';
 require_once APP_INCLUDES . '/recordings.php';
+require_once APP_INCLUDES . '/ai_usage.php';
 
 // Medido no spike: a análise leva ~2,3s e o teto do LiteSpeed passa de 35s.
 // Os 60s aqui são folga; o corte real é o CURLOPT_TIMEOUT de 25s.
@@ -90,6 +91,8 @@ try {
     if ($charged) {
         rate_limit_refund($userId, 'analyze');
     }
+    // Custo da IA por usuário (painel administrativo). Nunca lança.
+    record_last_chat_usage($userId, 'analyze', OPENAI_AUDIO_MODEL);
 }
 
 if ($failure !== null) {

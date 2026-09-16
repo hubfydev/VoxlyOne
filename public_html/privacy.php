@@ -75,6 +75,13 @@ require APP_INCLUDES . '/header.php';
         que a inteligência artificial entendeu e o feedback gerado.
       </li>
       <li>
+        <strong>Registros de uso:</strong> a data do seu último acesso e quantas vezes
+        cada recurso de inteligência artificial foi usado pela sua conta, com o custo
+        de processamento correspondente. Usamos isso para segurança, prevenção de
+        abuso e controle de custos. Ao excluir a conta, esses registros deixam de
+        estar ligados a você.
+      </li>
+      <li>
         <strong>Gravações aprovadas:</strong> o áudio da sua última gravação com nota
         acima de 8 em cada frase, e as playlists que você monta com elas.
       </li>
@@ -127,7 +134,7 @@ require APP_INCLUDES . '/header.php';
   <section class="legal__section" id="compartilhamento-com-terceiros" aria-labelledby="compartilhamento-com-terceiros-t">
     <h2 id="compartilhamento-com-terceiros-t">Compartilhamento com terceiros</h2>
     <p>
-      Usamos a <strong>OpenAI</strong> para analisar a pronúncia e traduzir frases.
+      Usamos a <strong>OpenAI</strong> para analisar a pronúncia, traduzir frases e gerar o áudio da pronúncia correta.
       Nesses momentos, o áudio e o texto da frase são transmitidos a ela. Usamos o
       <strong>Google</strong> exclusivamente para autenticação.
     </p>

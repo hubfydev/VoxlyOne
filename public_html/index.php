@@ -8,7 +8,10 @@ if (current_user() !== null) {
     redirect('/dashboard.php');
 }
 
-$loginError = isset($_GET['erro']);
+// Conta bloqueada: pelo login recusado (?erro=bloqueado) ou pela sessão derrubada
+$blocked    = ($_GET['erro'] ?? '') === 'bloqueado' || session_was_blocked();
+unset($_SESSION['blocked_notice']);
+$loginError = isset($_GET['erro']) && !$blocked;
 $pageTitle  = 'VoxlyOne — treine sua pronúncia em inglês';
 $pageStyles = ['landing'];
 $bodyClass  = 'is-landing';
@@ -62,6 +65,13 @@ require APP_INCLUDES . '/header.php';
   </div>
 
   <div class="landing__cta">
+    <?php if ($blocked): ?>
+      <p class="alert" role="alert">
+        <?= icon('lock') ?>
+        <span>Sua conta está bloqueada. Se acha que é um engano, escreva para
+          <a href="mailto:us@hubfy.us">us@hubfy.us</a>.</span>
+      </p>
+    <?php endif; ?>
     <?php if ($loginError): ?>
       <p class="alert" role="alert">
         <?= icon('triangle-alert') ?>

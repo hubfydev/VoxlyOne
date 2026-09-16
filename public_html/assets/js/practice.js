@@ -1,6 +1,6 @@
 /* Orquestra a tela de prática: play → gravar → analisar → feedback (seção 7). */
 
-import { speak, bindVoiceButtons } from './player.js';
+import { speak, bindVoiceButtons, preloadReference } from './player.js';
 import { Recorder } from './recorder.js';
 import { celebrate } from './confetti.js';
 import { openPlaylistPicker } from './playlist_picker.js';
@@ -43,7 +43,9 @@ const recorder = new Recorder({
 });
 
 highlightSpeed();
-const currentVoice = bindVoiceButtons(els.voiceButtons);
+// Trocar de voz já prepara o áudio dela: o toque em "Ouvir" toca sem esperar
+const currentVoice = bindVoiceButtons(els.voiceButtons, (gender) => preloadReference(data.tts?.[gender]));
+preloadReference(data.tts?.[currentVoice()]);
 
 // --- velocidade -------------------------------------------------------------
 
@@ -70,6 +72,7 @@ els.play.addEventListener('click', () => {
 
   speak(data.textEn, speed, {
     voice: currentVoice(),
+    audioUrl: data.tts?.[currentVoice()],
     // Habilita GRAVAR já no início do play: no Safari iOS o evento 'end' é
     // pouco confiável e travaria o app se fosse a única condição.
     onStart: () => {

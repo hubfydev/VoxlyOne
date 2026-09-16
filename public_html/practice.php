@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/boot.php';
 require_once APP_INCLUDES . '/phrases.php';
+require_once APP_INCLUDES . '/tts.php';
 
 $user   = require_auth();
 $userId = (int)$user['id'];
@@ -94,6 +95,7 @@ require APP_INCLUDES . '/header.php';
       <button class="btn btn--lg btn--block listen__play" type="button" id="btn-play">
         <?= icon('volume-2') ?>Ouvir pronúncia
       </button>
+      <p class="listen__ai-note"><?= icon('sparkles') ?> Voz gerada por inteligência artificial</p>
     </div>
   </article>
 
@@ -188,7 +190,11 @@ window.PRACTICE = {
   textEn: <?= json_encode($phrase['text_en'], JSON_UNESCAPED_UNICODE) ?>,
   csrf: <?= json_encode(csrf_token()) ?>,
   consented: <?= has_current_consent($user) ? 'true' : 'false' ?>,
-  attempts: <?= $attempts ?>
+  attempts: <?= $attempts ?>,
+  tts: {
+    female: <?= json_encode(tts_url($phrase, 'female')) ?>,
+    male: <?= json_encode(tts_url($phrase, 'male')) ?>
+  }
 };
 </script>
 <script type="module" src="<?= e(asset('/assets/js/practice.js')) ?>"></script>
