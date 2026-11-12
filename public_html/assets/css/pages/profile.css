@@ -298,3 +298,7 @@ a.settings__row:focus-visible { outline-offset: -3px; border-radius: var(--radiu
   .profile__avatar { width: 72px; height: 72px; }
   .danger-zone .btn { justify-self: start; width: auto; }
 }
+
+.playlist-preferences { display: grid; gap: var(--space); margin-bottom: 16px; padding: 20px; }
+.playlist-preferences input { width: 100%; min-height: 44px; font-size: 16px; }
+.playlist-preferences p { margin: 0; }

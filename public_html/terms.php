@@ -22,7 +22,7 @@ require APP_INCLUDES . '/header.php';
   <header class="legal__head">
     <span class="legal__icon"><?= icon('book-open-text') ?></span>
     <h1>Termos de Uso</h1>
-    <p class="legal__date"><?= icon('calendar') ?> <span>Última atualização: setembro de 2026</span></p>
+    <p class="legal__date"><?= icon('calendar') ?> <span>Última atualização: novembro de 2026</span></p>
   </header>
 
   <!-- Índice: âncoras para cada seção -->
@@ -52,7 +52,7 @@ require APP_INCLUDES . '/header.php';
       O VoxlyOne é uma ferramenta de estudo que ajuda falantes de português a
       treinar a pronúncia do inglês. Você cadastra frases, ouve a pronúncia, grava
       sua voz e recebe uma avaliação automática com nota e dicas. As gravações com
-      nota acima de 8 podem ser organizadas em playlists para você ouvir a própria
+      nota acima do corte escolhido em Configurações (de 4 a 9; padrão 8) podem ser organizadas em playlists para você ouvir a própria
       voz.
     </p>
     <p>

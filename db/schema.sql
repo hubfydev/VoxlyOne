@@ -8,6 +8,8 @@ CREATE TABLE users (
   email        VARCHAR(255) NOT NULL UNIQUE,
   name         VARCHAR(120) NOT NULL,
   avatar_url   VARCHAR(500),
+  playlist_score_threshold DECIMAL(3,1) NOT NULL DEFAULT 8.0,
+  CONSTRAINT chk_playlist_score_threshold CHECK (playlist_score_threshold BETWEEN 4.0 AND 9.0),
   -- plan (free/premium): adicionar na Fase 2, quando premium existir
   consented_at DATETIME NULL,          -- consentimento de gravação (RF-12)
   consent_version TINYINT UNSIGNED NOT NULL DEFAULT 0, -- texto aceito; ver CONSENT_VERSION
@@ -60,7 +62,7 @@ CREATE TABLE attempts (
   feedback_json JSON NOT NULL,
   audio_seconds TINYINT UNSIGNED NULL, -- derivado: (bytes - 44) / 32000
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  -- O áudio da tentativa não fica aqui: só o aprovado (> 8) vai para recordings
+  -- O áudio da tentativa não fica aqui: só o aprovado (> corte) vai para recordings
   KEY idx_phrase (phrase_id),
   KEY idx_user (user_id),
   FOREIGN KEY (phrase_id) REFERENCES phrases(id) ON DELETE CASCADE,
@@ -77,7 +79,7 @@ CREATE TABLE rate_limits (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Gravação aprovada ATUAL de cada frase (nota > 8). Uma por frase: quando uma
+-- Gravação aprovada ATUAL de cada frase (nota > corte). Uma por frase: quando uma
 -- nova gravação também é aprovada, a linha é mantida e só o arquivo muda — assim
 -- toda playlist que referencia esta linha passa a tocar o áudio novo sozinha.
 CREATE TABLE recordings (
@@ -85,7 +87,7 @@ CREATE TABLE recordings (
   user_id       INT UNSIGNED NOT NULL,
   phrase_id     INT UNSIGNED NOT NULL,
   attempt_id    INT UNSIGNED NULL,       -- tentativa que gerou o áudio atual
-  score         DECIMAL(3,1) NOT NULL,   -- sempre > 8.0
+  score         DECIMAL(3,1) NOT NULL,   -- maior que o corte na aprovação
   file_name     VARCHAR(40) NOT NULL,    -- nome aleatório; muda a cada substituição
   audio_bytes   INT UNSIGNED NOT NULL,
   audio_seconds TINYINT UNSIGNED NULL,

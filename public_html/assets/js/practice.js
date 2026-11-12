@@ -308,8 +308,8 @@ function renderFeedback(result) {
 }
 
 /**
- * Playlists (nota > 8): a gravação acabou de ser guardada e pode entrar em
- * playlists agora ou depois. Com nota ≤ 8, só avisa que a aprovada anterior
+ * Playlists (nota > corte): a gravação acabou de ser guardada e pode entrar em
+ * playlists agora ou depois. Com nota ≤ corte, só avisa que a aprovada anterior
  * continua valendo. Não mexe nos botões de ação da prática.
  */
 function buildPlaylistBox(result) {

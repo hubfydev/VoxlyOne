@@ -4,22 +4,20 @@ declare(strict_types=1);
 /**
  * Gravações aprovadas do usuário — o conteúdo das playlists.
  *
- * Só a gravação com nota ESTRITAMENTE maior que 8 é guardada; as demais seguem
+ * Só a gravação com nota ESTRITAMENTE maior que o corte do usuário é guardada; as demais seguem
  * sendo descartadas logo após a análise, como sempre foram. Cada frase tem no
  * máximo UMA gravação aprovada atual (UNIQUE phrase_id): uma nova aprovação
  * troca o arquivo e mantém a linha, então as playlists nunca precisam ser
- * atualizadas. Uma tentativa ≤ 8 nunca chega aqui e não mexe na aprovada.
+ * atualizadas. Uma tentativa ≤ corte nunca chega aqui e não mexe na aprovada.
  *
  * Os arquivos ficam em voxly-app/storage/recordings/{user_id}/, fora de todo
  * document root, e só saem pelo recording.php, que confere o dono.
  */
 
-/** Nota de corte. A comparação é `>`: 8.0 avança na prática, mas não entra em playlist. */
-const PLAYLIST_MIN_SCORE = 8.0;
-
-function recording_is_approved(float $score): bool
+/** Comparação estrita com o corte escolhido pelo usuário. */
+function recording_is_approved(float $score, float $threshold): bool
 {
-    return $score > PLAYLIST_MIN_SCORE;
+    return $score > $threshold;
 }
 
 /** Pasta raiz das gravações, irmã de includes/ e config/ dentro da voxly-app. */
@@ -205,10 +203,11 @@ function attach_approved_recording(
     int $attemptId,
     float $score,
     string $wav,
-    int $audioSeconds
+    int $audioSeconds,
+    float $threshold
 ): array {
-    if (!recording_is_approved($score)) {
-        // Nota ≤ 8: não guarda nada e preserva a aprovada anterior, se houver
+    if (!recording_is_approved($score, $threshold)) {
+        // Nota ≤ corte: não guarda nada e preserva a aprovada anterior, se houver
         $existing = null;
         try {
             $existing = find_recording_by_phrase($userId, $phraseId);

@@ -38,17 +38,17 @@ function require_playlist(int $userId, string $field = 'playlist_id'): array
 
 /**
  * Gravação do usuário vinda do POST, e APROVADA. A checagem de nota se repete
- * aqui de propósito: a regra "só > 8 entra em playlist" vale no servidor, não só
+ * aqui de propósito: a regra "só > corte entra em playlist" vale no servidor, não só
  * na interface.
  */
-function require_approved_recording(int $userId): array
+function require_approved_recording(int $userId, bool $checkScore = true): array
 {
     $recording = find_recording($userId, (int)($_POST['recording_id'] ?? 0));
     if ($recording === null) {
         json_error('not_found', 'Gravação não encontrada.', 404);
     }
-    if (!recording_is_approved((float)$recording['score'])) {
-        json_error('not_approved', 'Só gravações com nota acima de 8 entram em playlists.', 422);
+    if ($checkScore && !recording_is_approved((float)$recording['score'], playlist_score_threshold(current_user()))) {
+        json_error('not_approved', 'Só gravações com nota acima de ' . number_format(playlist_score_threshold(current_user()), 1, ',', '') . ' entram em novas playlists.', 422);
     }
     return $recording;
 }
@@ -156,7 +156,7 @@ function action_settings(int $userId): never
  */
 function action_set_memberships(int $userId): never
 {
-    $recording = require_approved_recording($userId);
+    $recording = require_approved_recording($userId, false);
     $wanted    = post_int_list('playlist_ids');
 
     $owned = array_column(list_playlists($userId, (int)$recording['id']), null, 'id');
@@ -164,6 +164,9 @@ function action_set_memberships(int $userId): never
     foreach ($wanted as $playlistId) {
         if (!isset($owned[$playlistId])) {
             json_error('not_found', 'Playlist não encontrada.', 404);
+        }
+        if (!$owned[$playlistId]['has_recording']) {
+            require_approved_recording($userId);
         }
     }
 

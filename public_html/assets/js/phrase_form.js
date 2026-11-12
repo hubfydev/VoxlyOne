@@ -96,7 +96,7 @@ form.addEventListener('submit', async (event) => {
   }
 });
 
-// Gravação aprovada da frase: o botão só existe quando há uma (nota > 8)
+// Gravação aprovada da frase: o botão só existe quando há uma (nota > corte)
 const btnPlaylist = document.getElementById('btn-playlist');
 btnPlaylist?.addEventListener('click', () => {
   openPlaylistPicker({

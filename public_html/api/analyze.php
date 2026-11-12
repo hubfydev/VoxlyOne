@@ -41,7 +41,7 @@ if ($_FILES['audio']['size'] > 2 * 1024 * 1024) {
 
 $wav = (string)file_get_contents($_FILES['audio']['tmp_name']);
 
-// O upload temporário do PHP sai do disco já. Só uma gravação aprovada (> 8)
+// O upload temporário do PHP sai do disco já. Só uma gravação aprovada (> corte)
 // volta a ser escrita, depois da nota — ver attach_approved_recording().
 @unlink($_FILES['audio']['tmp_name']);
 
@@ -78,7 +78,7 @@ try {
 
         // Playlists: guarda o áudio só se aprovado. Nunca lança — ver recordings.php
         $result += attach_approved_recording(
-            $userId, (int)$phrase['id'], $result['attempt_id'], $result['score'], $wav, $audioSeconds
+            $userId, (int)$phrase['id'], $result['attempt_id'], $result['score'], $wav, $audioSeconds, playlist_score_threshold($user)
         );
     }
 } catch (OpenAiException $ex) {

@@ -159,7 +159,7 @@ require APP_INCLUDES . '/header.php';
       <li>
         <span class="consent__bullet"><?= icon('trash-2') ?></span>
         <p>
-          Gravações com nota <strong>até 8</strong> são
+          Gravações com nota <strong>até <?= e(number_format(playlist_score_threshold($user), 1, ',', '')) ?></strong> são
           <strong>descartadas logo em seguida</strong> — delas guardamos só a nota e o
           feedback.
         </p>
@@ -167,13 +167,16 @@ require APP_INCLUDES . '/header.php';
       <li>
         <span class="consent__bullet"><?= icon('lock') ?></span>
         <p>
-          Quando a nota passa de 8, guardamos <strong>a última gravação aprovada</strong>
+          Quando a nota passa de <?= e(number_format(playlist_score_threshold($user), 1, ',', '')) ?>, guardamos <strong>a última gravação aprovada</strong>
           de cada frase para você ouvir a própria voz nas suas playlists. Só você tem
           acesso a ela, e ela é apagada quando você exclui a frase ou a conta.
         </p>
       </li>
     </ul>
 
+    <p>Você pode mudar o corte de 4 a 9 em Configurações no Perfil (padrão 8).
+      A mudança vale para novas gravações e inclusões; itens já adicionados continuam
+      nas playlists. Áudios descartados não podem ser recuperados.</p>
     <p class="consent__more">
       Detalhes na <a href="/privacy.php" target="_blank" rel="noopener">Política de privacidade</a>.
     </p>

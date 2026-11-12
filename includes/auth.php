@@ -4,9 +4,10 @@ declare(strict_types=1);
 /**
  * Versão do texto de consentimento de gravação em vigor.
  * v1: o áudio era sempre descartado. v2: gravações com nota > 8 ficam guardadas
- * para as playlists. Quem aceitou uma versão anterior precisa aceitar de novo.
+ * para as playlists. v3: corte configurável de 4 a 9 por usuário.
+ * Quem aceitou uma versão anterior precisa aceitar de novo.
  */
-const CONSENT_VERSION = 2;
+const CONSENT_VERSION = 3;
 
 /** Usuário logado, ou null. Faz uma única consulta por request. */
 function current_user(): ?array
@@ -27,7 +28,7 @@ function current_user(): ?array
     try {
         $stmt = db()->prepare(
             'SELECT id, google_id, email, name, avatar_url, consented_at, consent_version,
-                    blocked_at, created_at
+                    blocked_at, playlist_score_threshold, created_at
                FROM users WHERE id = ?'
         );
         $stmt->execute([$id]);
@@ -35,7 +36,7 @@ function current_user(): ?array
         // Código novo no ar antes da migration do painel: segue sem o bloqueio
         error_log('current_user sem blocked_at (rodar migration do painel): ' . $ex->getMessage());
         $stmt = db()->prepare(
-            'SELECT id, google_id, email, name, avatar_url, consented_at, consent_version, created_at
+            'SELECT id, google_id, email, name, avatar_url, consented_at, consent_version, playlist_score_threshold, created_at
                FROM users WHERE id = ?'
         );
         $stmt->execute([$id]);

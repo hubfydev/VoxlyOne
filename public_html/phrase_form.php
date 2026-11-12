@@ -169,13 +169,13 @@ require APP_INCLUDES . '/header.php';
       <p class="my-recording__note">
         <?= icon('info') ?>
         <span>
-          Uma nova gravação com nota acima de 8 substitui esta em todas as playlists.
-          Com nota até 8, esta continua valendo.
+          Uma nova gravação com nota acima de <?= e(number_format(playlist_score_threshold($user), 1, ',', '')) ?> substitui esta em todas as playlists.
+          Com nota até <?= e(number_format(playlist_score_threshold($user), 1, ',', '')) ?>, esta continua valendo.
         </span>
       </p>
     <?php else: ?>
       <p class="my-recording__text">
-        Tire nota acima de 8 na prática para guardar sua gravação e ouvi-la nas playlists.
+        Tire nota acima de <?= e(number_format(playlist_score_threshold($user), 1, ',', '')) ?> na prática para guardar sua gravação e ouvi-la nas playlists.
       </p>
       <div class="my-recording__actions">
         <a class="btn btn--sm" href="/practice.php?id=<?= (int)$phrase['id'] ?>"><?= icon('mic') ?> Praticar</a>

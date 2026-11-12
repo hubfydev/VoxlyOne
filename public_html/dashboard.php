@@ -297,11 +297,11 @@ require APP_INCLUDES . '/header.php';
                     data-playlist="<?= (int)$phrase['recording_id'] ?>"
                     data-label="<?= e($phrase['text_en']) ?>"
                     aria-label="Adicionar à playlist" title="Adicionar à playlist"><?= icon('list-plus') ?></button>
-          <?php elseif ($phrase['best_score'] !== null && recording_is_approved((float)$phrase['best_score'])): ?>
+          <?php elseif ($phrase['best_score'] !== null && recording_is_approved((float)$phrase['best_score'], playlist_score_threshold($user))): ?>
             <?php /* Aprovada antes das playlists existirem: o áudio não foi guardado */ ?>
             <button class="btn btn--sm btn--ghost btn--icon" type="button" disabled data-playlist-unavailable
-                    aria-label="Adicionar à playlist (pratique de novo e tire mais de 8 para salvar sua gravação)"
-                    title="Pratique de novo e tire mais de 8 para salvar sua gravação"><?= icon('list-plus') ?></button>
+                    aria-label="Adicionar à playlist (pratique de novo e tire mais de <?= e(number_format(playlist_score_threshold($user), 1, ',', '')) ?> para salvar sua gravação)"
+                    title="Pratique de novo e tire mais de <?= e(number_format(playlist_score_threshold($user), 1, ',', '')) ?> para salvar sua gravação"><?= icon('list-plus') ?></button>
           <?php endif; ?>
           <a class="btn btn--sm btn--ghost btn--icon" href="/phrase_form.php?id=<?= (int)$phrase['id'] ?>"
              aria-label="Editar" title="Editar"><?= icon('pencil') ?></a>

@@ -22,7 +22,7 @@ require APP_INCLUDES . '/header.php';
   <header class="legal__head">
     <span class="legal__icon"><?= icon('shield-check') ?></span>
     <h1>Política de Privacidade</h1>
-    <p class="legal__date"><?= icon('calendar') ?> <span>Última atualização: setembro de 2026</span></p>
+    <p class="legal__date"><?= icon('calendar') ?> <span>Última atualização: novembro de 2026</span></p>
   </header>
 
   <!-- Índice: âncoras para cada seção -->
@@ -83,7 +83,7 @@ require APP_INCLUDES . '/header.php';
       </li>
       <li>
         <strong>Gravações aprovadas:</strong> o áudio da sua última gravação com nota
-        acima de 8 em cada frase, e as playlists que você monta com elas.
+        acima do corte escolhido por você em Configurações (de 4 a 9; padrão 8) em cada frase, e as playlists que você monta com elas.
       </li>
     </ul>
     <p>
@@ -100,16 +100,18 @@ require APP_INCLUDES . '/header.php';
         <strong>OpenAI</strong> para análise da pronúncia.
       </li>
       <li>
-        Se a nota for <strong>8 ou menos</strong>, o áudio é
+        Se a nota for <strong>igual ou menor que o corte configurado no momento da análise</strong>, o áudio é
         <strong>descartado em seguida</strong>: não é gravado em disco nem em banco
         de dados. Dessa tentativa guardamos só o resultado em texto — a nota e o
         feedback.
       </li>
       <li>
-        Se a nota for <strong>maior que 8</strong>, guardamos o áudio para que você
+        Se a nota for <strong>maior que o corte configurado no momento da análise</strong>, guardamos o áudio para que você
         possa ouvir a própria voz nas suas playlists. Fica guardada apenas
         <strong>a última gravação aprovada de cada frase</strong>: uma nova aprovação
-        substitui a anterior, que é apagada.
+        substitui a anterior, que é apagada, mesmo que a nova nota seja menor.
+        Mudar o corte afeta novas gravações e inclusões; os itens já adicionados
+        continuam nas playlists. Áudios descartados não podem ser recuperados.
       </li>
       <li>
         Esses áudios ficam numa área privada do servidor, fora do acesso público, e

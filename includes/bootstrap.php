@@ -23,6 +23,7 @@ date_default_timezone_set(defined('APP_TIMEZONE') ? APP_TIMEZONE : 'America/New_
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/preferences.php';
 require_once __DIR__ . '/icons.php';
 
 start_app_session();

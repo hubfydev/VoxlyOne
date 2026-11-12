@@ -37,8 +37,9 @@ IA: OpenAI `gpt-audio-1.5` via cURL · Auth: Google OAuth 2.0 manual + sessões 
   `http_response_code` correto; 401 JSON se sem sessão, nunca redirect
 - Toda página protegida começa com `require_auth()`; toda query filtra por
   `user_id` da sessão
-- Áudio com nota ≤ 8 nunca vai para disco — processar em memória e descartar.
-  Só a gravação aprovada (> 8) é guardada, via `includes/recordings.php`
+- Áudio com nota ≤ corte do usuário nunca vai para disco — processar em memória e descartar.
+  Corte individual de 4 a 9 (padrão 8), salvo em `users.playlist_score_threshold`.
+  Só a gravação aprovada (> corte) é guardada, via `includes/recordings.php`
 - Mensagens de erro ao usuário: genéricas e em PT-BR; detalhes técnicos só no log
 - JS sem frameworks e sem build: estáticos em `assets/js`, ES6+, sem CDN.
   O confetti é ~20 linhas de canvas próprio.
@@ -91,11 +92,12 @@ client-side; quem grava é `api/consent.php`.
 
 **Playlists (12/09/2026)** — a playlist toca a **voz do usuário**, nunca a voz
 sintetizada de referência. Regras:
-- Entra em playlist só gravação com `score > 8` (estrito: `8.0` avança na prática
-  mas NÃO entra). Constante `PLAYLIST_MIN_SCORE`, checada também no servidor.
+- Novas inclusões exigem `score > corte` (estrito), com corte por usuário de 4 a 9
+  (padrão 8), editável em Perfil → Configurações e checado também no servidor.
+  Alterar o corte preserva itens existentes; gravações descartadas não voltam.
 - `recordings` guarda UMA gravação aprovada atual por frase (`UNIQUE phrase_id`).
   Nova aprovação mantém a linha e troca só o arquivo → todas as playlists passam a
-  tocar o áudio novo sem update. Nota ≤ 8 não mexe na aprovada.
+  tocar o áudio novo sem update. Nota ≤ corte não mexe na aprovada.
 - Ordem ao substituir: grava arquivo novo → troca referência no banco → apaga o antigo.
 - `attach_approved_recording()` NUNCA lança: falha ao guardar áudio não pode virar
   erro numa análise já paga.
@@ -105,7 +107,7 @@ sintetizada de referência. Regras:
 - FK não apaga arquivo: exclusão de frase e de conta apagam os arquivos explicitamente.
 - Excluir playlist ou remover item nunca apaga áudio.
 
-**Consentimento versionado**: `CONSENT_VERSION` em `auth.php` (hoje 2). Mudou o
+**Consentimento versionado**: `CONSENT_VERSION` em `auth.php` (hoje 3). Mudou o
 texto do modal/privacidade sobre gravações → incrementar, e todos aceitam de novo.
 Usar `has_current_consent($user)`, não `consented_at !== null`.
 

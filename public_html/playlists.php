@@ -35,7 +35,7 @@ require APP_INCLUDES . '/header.php';
 <div class="pl-intro">
   <span class="pl-intro__icon"><?= icon('headphones') ?></span>
   <p>
-    Ouça <strong>a sua própria voz</strong> nas frases em que tirou mais de 8.
+    Ouça <strong>a sua própria voz</strong> nas frases em que tirou mais de <?= e(number_format(playlist_score_threshold($user), 1, ',', '')) ?>.
     Repetir o próprio acerto ajuda a fixar o som certo.
   </p>
 </div>
@@ -65,7 +65,7 @@ require APP_INCLUDES . '/header.php';
     <span class="empty__icon"><?= icon('list-music') ?></span>
     <p class="empty__title">Nenhuma playlist ainda</p>
     <p class="empty__text">
-      Junte as frases em que você tirou mais de 8 e ouça a sua voz acertando.
+      Junte as frases em que você tirou mais de <?= e(number_format(playlist_score_threshold($user), 1, ',', '')) ?> e ouça a sua voz acertando.
       Dá para adicionar logo depois da nota ou pelo botão <strong>+ Playlist</strong>
       na lista de frases.
     </p>

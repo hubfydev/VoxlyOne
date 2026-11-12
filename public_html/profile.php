@@ -103,7 +103,21 @@ require APP_INCLUDES . '/header.php';
 
   <!-- Conta e documentos -->
   <section aria-labelledby="settings-title">
-    <h2 class="profile__heading" id="settings-title">Conta</h2>
+    <h2 class="profile__heading" id="settings-title">Configurações</h2>
+    <form id="playlist-preferences" class="card playlist-preferences" method="post" action="/api/preferences.php">
+      <?= csrf_field() ?>
+      <label class="field" for="playlist-threshold">
+        <span class="field__label">Nota de corte para playlists</span>
+        <input id="playlist-threshold" name="playlist_score_threshold" type="number"
+               min="4" max="9" step="0.1" required
+               value="<?= e(number_format(playlist_score_threshold($user), 1, '.', '')) ?>"
+               aria-describedby="playlist-threshold-hint">
+        <span class="field__hint" id="playlist-threshold-hint">Escolha de 4 a 9. A nota precisa ser maior que o corte para guardar a gravação e adicioná-la a playlists. O padrão é 8.</span>
+      </label>
+      <p class="field__hint">A mudança vale para novas gravações e inclusões. Os itens já adicionados continuam nas playlists. Áudios descartados não são recuperados; uma nova gravação aprovada substitui a anterior em todas as playlists. A nota para avançar na prática continua a mesma.</p>
+      <button class="btn btn--soft" type="submit">Salvar configuração</button>
+      <p id="playlist-preferences-status" role="status" aria-live="polite" hidden></p>
+    </form>
     <ul class="settings">
       <?php if ($user['consented_at'] !== null): ?>
         <li class="settings__row settings__row--static">

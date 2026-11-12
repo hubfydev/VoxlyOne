@@ -76,7 +76,7 @@ require APP_INCLUDES . '/header.php';
   <span class="empty__icon"><?= icon('list-music') ?></span>
   <p class="empty__title">Esta playlist está vazia</p>
   <p class="empty__text">
-    Adicione gravações em que você tirou mais de 8: logo depois da nota, na
+    Adicione gravações em que você tirou mais de <?= e(number_format(playlist_score_threshold($user), 1, ',', '')) ?>: logo depois da nota, na
     prática, ou pelo botão <strong>+ Playlist</strong> na lista de frases.
   </p>
   <a class="btn" href="/dashboard.php"><?= icon('book-open-text') ?>Ir para minhas frases</a>
